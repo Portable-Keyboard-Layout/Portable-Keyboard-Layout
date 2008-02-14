@@ -5,7 +5,7 @@ use warnings;
 use strict;
 
 my $KLCFILE = $ARGV[0];
-my $EXTEND_MODE = ( $ARGV[1] eq 'vk' );
+my $EXTEND_MODE = ( $ARGV[1] and $ARGV[1] eq 'vk' );
 my $INIFILE = 'layout.ini';
 
 my $LAYOUT  = '[layout]'."\n";
@@ -60,6 +60,10 @@ my @SHIFTSTATES; # position => state
 ####### Read keymapper #######
 
 $GLOBAL .= 'shiftstates = '. $INFORMATIONS{shiftstates} . "\n";
+$GLOBAL .= '; extend_key = CapsLock' . "\n";
+$GLOBAL .= 'img_width = 291' . "\n";
+$GLOBAL .= 'img_height = 99' . "\n";
+
 $LAYOUT .= ";scan = VK\tCapStat";
 foreach ( split /:/, $INFORMATIONS{shiftstates}) {
 	$LAYOUT .= "\t" . $_ . shiftStateName($_);
@@ -187,8 +191,9 @@ sub mapkey
 		$un = hex substr($data,0,4);
 	}
 	#return $un;
-	return '*{tab}' if $un == 9;
-	return '={space}' if $un == 32;
+	return '*{Enter}' if $un == 13;
+	return '*{Tab}' if $un == 9;
+	return '={Space}' if $un == 32;
 	return 'dk'. DeadKeyNumber($un) if 5 == length($data);
 	return chr($un);
 }

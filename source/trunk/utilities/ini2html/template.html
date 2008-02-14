@@ -4,7 +4,8 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <style>
 	body {
-		background-color: #fff;
+		background-color: #f0f0ff;
+		font-family: "DejaVu Sans", Arial, Sans;
 	}
 	h1 {
 		color: #0a0;
@@ -17,37 +18,46 @@
 		width: 17.4em;
 		text-align:center
 	}
-	.keyboard {
-		width: 20em;
-		height: 5.6em;
-		border: 0.1em solid #fff;
+	div#layouts{
+		position: absolute;
+		top: 200px;
+		left: 10px;
+	}
+	div.layout {
+		border: 1px solid #ccc;
 		background-color: #fff;
-		-moz-border-radius: 0.5em;
-		padding: 0.3em;
+		padding: 2px;
+		margin: 10px 0;
 		overflow:visible;
+		width: 18.6em;
+		-moz-border-radius: 0.4em;
+		border-radius: 0.4em;
+	}
+	table.onerow,
+	table.onerow tr,
+	table.onerow td {
+		margin: 0 0;
+		padding: 0 0;
+		overflow: hidden;
+	}
+	table.onerow {
+		margin: -1px 0;
 	}
 	.button {
 		width: 1em;
 		height: 1em;
-		float: left;
 		text-align: center;
 		margin: 0.05em;
 		border: 1px solid #ccc;
 		overflow: hidden;
-		-moz-border-radius: 0.4em;
+		-moz-border-radius: 0.3em;
+		border-radius: 0.3em;
 	}
 	.button div {
-		position: relative;
+		overflow: hidden;
 		width: 100%;
 		height: 100%;
 		font-size: 0.9em;
-		margin: 0 auto;
-		margin-top: -0.07em;
-	}
-	.newRow {
-		position: relative;
-		float: right;
-		clear: both;
 	}
 	.special div {
 		color: #f00;
@@ -68,7 +78,9 @@
 	.finger6 { background-color: #cfc; }
 	.finger7 { background-color: #ddf; }
 	.finger8 { background-color: #ffc; }
-	.finger9 { background-color: #0f0; }
+	.finger9 { background-color: #cfc; }
+	.pressed { background-color: #030; }
+	.pressed div { color: #ffc; }
 </style>
 </head>
 <body>
