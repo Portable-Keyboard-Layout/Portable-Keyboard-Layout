@@ -5,7 +5,7 @@
 #SingleInstance force
 #MaxHotkeysPerInterval 300
 
-pkl_version = 0.2 BETA
+pkl_version = 0.2 ALPHA
 pkl_compiled = 2008.--.--.
 
 SendMode Event
@@ -384,6 +384,16 @@ extendKeyPressed( HK )
 		return
 	}
 	
+	
+	if ( SubStr( ch, 1, 1 ) == "!" ) {
+		ch := SubStr( ch, 2 )
+		SendInput, {RAW}%ch%
+		return
+	} else if ( SubStr( ch, 1, 1 ) == "*" ) {
+		ch := SubStr( ch, 2 )
+		SendInput, %ch%
+		return
+	}
 	if ( ShiftPressed && !getKeyState( ShiftPressed, "P" ) ) {
 		Send {RShift Up}
 		ShiftPressed := ""
@@ -415,18 +425,18 @@ extendKeyPressed( HK )
 		Loop 5  ; Scroll Speed
 			SendMessage, 0x114, 1, 0,  %control%, A ; 0x114 is WM_HSCROLL
 		return
-	}
-	
-	if ( ch == "Cut" ) {
-		ch = +{Del}
-	} else if ( ch == "Copy" ) {
-		ch = ^{Ins}
-	} else if ( ch == "Paste" ) {
-		ch = +{Ins}
 	} else {
-		ch = {Blind}{%ch%}
+		if ( ch == "Cut" ) {
+			ch = +{Del}
+		} else if ( ch == "Copy" ) {
+			ch = ^{Ins}
+		} else if ( ch == "Paste" ) {
+			ch = +{Ins}
+		} else {
+			ch = {Blind}{%ch%}
+		}
+		Send %ch%
 	}
-	Send %ch%
 }
 
 toggleCapsLock()
