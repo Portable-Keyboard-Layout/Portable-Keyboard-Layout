@@ -61,8 +61,8 @@ my @SHIFTSTATES; # position => state
 
 $GLOBAL .= 'shiftstates = '. $INFORMATIONS{shiftstates} . "\n";
 $GLOBAL .= '; extend_key = CapsLock' . "\n";
-$GLOBAL .= 'img_width = 291' . "\n";
-$GLOBAL .= 'img_height = 99' . "\n";
+$GLOBAL .= 'img_width = 296' . "\n";
+$GLOBAL .= 'img_height = 102' . "\n";
 
 $LAYOUT .= ";scan = VK\tCapStat";
 foreach ( split /:/, $INFORMATIONS{shiftstates}) {
@@ -169,11 +169,20 @@ foreach
 print INI "\n\n";
 print INI $GLOBAL;
 print INI "\n\n";
-print INI $LAYOUT, "\n";
+print INI <<'EOF';
+[fingers]
+row1 = 1123445567888
+row2 = 1123445567888
+row3 = 1123445567888
+row4 = 11234455678
+
+EOF
+print INI $LAYOUT;
 print INI "\n\n";
 print INI $LIGATURE;
 print INI "\n\n";
-print INI $DEADKEYS, "\n";
+print INI $DEADKEYS;
+print INI "\n\n";
 close INI;
 
 ########################### Functions ###########################

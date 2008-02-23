@@ -14,10 +14,10 @@ my $TEMPLATE = '';
 ###############################################################################################
 {
 	my %shortNames = (
-		'backspace' => '<span style="font-size:1.5em">'.chr(0x21dc).'</span>',
-		'lshift' => '<span style="font-size:1.5em">'.chr(0x21d1).'</span>',
-		'capslock' => '<span style="font-size:1.5em">'.chr(0x21c8).'</span>',
-		'enter' => '<span style="font-size:1.5em">'.chr(0x21b5).'</span>',
+		'backspace' => '<span class="special">'.chr(0x21dc).'</span>',
+		'lshift' => '<span class="special">'.chr(0x21d1).'</span>',
+		'capslock' => '<span class="special">'.chr(0x21c8).'</span>',
+		'enter' => '<span class="special">'.chr(0x21b5).'</span>',
 		'lctrl' => 'LCt',
 		'lwin' => 'LW',
 		'lalt' => 'LAlt',
@@ -25,7 +25,7 @@ my $TEMPLATE = '';
 		'rctrl' => 'RCt',
 		'rwin' => 'RW',
 		'ralt' => 'RAlt',
-		'tab' => '<span style="font-size:1.5em">'.chr(0x21b9).'</span>',
+		'tab' => '<span class="special">'.chr(0x21b9).'</span>',
 		
 	);
 	sub shortLabel($)
@@ -105,6 +105,7 @@ while ( my ($sc, $def) = each(%{$layout->{layout}} ) )
 		$hasCapsState = 1;
 	}
 	my $button = ini2html::Button->new($type, $label, $vk, $caps);
+print $sc unless defined buttonPosition( $sc );
 	my ( $r, $c ) = @{buttonPosition( $sc )->[0]};
 	my $currmode = 0;
 	foreach ( @modes ) {

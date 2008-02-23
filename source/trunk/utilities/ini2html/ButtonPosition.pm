@@ -106,6 +106,7 @@
 		} else {
 			die 'Bad enter mode: ' .$v;
 		}
+		$buttonPositions{sc01c} = $buttonPositions{enter};
 		$buttonPositions{enterMode} = $v;
 		return $v;
 	}

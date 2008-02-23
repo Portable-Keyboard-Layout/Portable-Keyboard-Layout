@@ -5,8 +5,8 @@
 #SingleInstance force
 #MaxHotkeysPerInterval 300
 
-pkl_version = 0.2 ALPHA
-pkl_compiled = 2008.--.--.
+pkl_version = 0.2
+pkl_compiled = 2008.02.23.
 
 SendMode Event
 SetBatchLines, -1
