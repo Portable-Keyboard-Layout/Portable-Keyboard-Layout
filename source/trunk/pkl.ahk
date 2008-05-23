@@ -19,16 +19,16 @@ extendKey = ; With this you can use ijkl as arrows, etc.
 CurrentDeadKeys = 0 ; How many dead key were pressed
 CurrentBaseKey  = 0 ; Current base key :)
 
-pkl_init() ; I would like use local variables
+previousLayoutFromCommandLine = %1%
+pkl_init( previousLayoutFromCommandLine ) ; I would like use local variables
 return
 
 
 
 ; ##################################### functions #####################################
 
-pkl_init()
+pkl_init( layoutFromCommandLine = "" )
 {
-
 	if ( !FileExist("pkl.ini") ) {
 		msgBox, pkl.ini file NOT FOUND`nSorry. The program will exit.
 		ExitApp
@@ -48,6 +48,10 @@ pkl_init()
 	IniRead, t, pkl.ini, pkl, exitApp, %A_Space%
 	if ( t <> "" )
 		Hotkey, %t%, ExitApp
+
+	IniRead, t, pkl.ini, pkl, changeLayout, %A_Space%
+	if ( t <> "" )
+		Hotkey, %t%, changeTheActiveLayout
 	
 	IniRead, t, pkl.ini, pkl, systemsdeadkeys, %A_Space%
 	setGlobal("DeadKeysInCurrentLayout", t)
@@ -60,10 +64,26 @@ pkl_init()
 		SendU_Clipboard_Restore_Mode( t )
 
 	IniRead, Layout, pkl.ini, pkl, layout, %A_Space%
+	StringSplit, layouts, Layout, `,
+	if ( layoutFromCommandLine ) {
+		Layout := ""
+		Loop, % layouts0 {
+			A_Layout := layouts%A_Index%
+			if ( layoutFromCommandLine == A_Layout ) {
+				index := A_Index + 1
+				Layout := layouts%index%
+			}
+		}
+		if ( Layout == "" )
+			Layout := layouts1
+	} else {
+		Layout := layouts1
+	}
 	if ( Layout == "" ) {
 		pkl_MsgBox( 1 )
 		ExitApp
-	} 
+	}
+	setGlobal( "Layout", Layout )
 	if ( compact_mode ) {
 		LayoutFile = layout.ini
 		setGlobal( "layoutDir", "." )
@@ -895,6 +915,14 @@ return
 displayHelpImageToggle:
 	pkl_displayHelpImage(2)
 return
+
+changeTheActiveLayout:
+	if ( A_IsCompiled )
+		Run %A_ScriptName% %Layout%
+	else
+		Run %A_AhkPath% %A_ScriptName% %Layout%
+return
+
 
 ; ##################################### END #####################################
 
