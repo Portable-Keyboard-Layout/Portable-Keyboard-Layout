@@ -15,7 +15,7 @@ SetWorkingDir, %A_ScriptDir%
 
 layoutDir   = ; The directory of the layout
 hasAltGr    = 0 ; Did work Right alt as altGr in the layout?
-extendKey = "" ; With this you can use ijkl as arrows, etc.
+extendKey = ; With this you can use ijkl as arrows, etc.
 CurrentDeadKeys = 0 ; How many dead key were pressed
 CurrentBaseKey  = 0 ; Current base key :)
 
@@ -267,7 +267,6 @@ pkl_about()
 
 keyPressed( HK )
 {
-	Critical, Off
 	static extendKeyStroke := 0
 	static extendKey := "--"
 	modif = ; modifiers to send
@@ -476,6 +475,13 @@ DeadKey(DK)
 	global CurrentDeadKeyNum
 	static PVDK := "" ; Pressed dead keys
 	DeadKeyChar := DeadKeyValue( DK, 0)
+	
+	; Pressed a deadkey twice
+	if ( CurrentDeadKeys > 0 && DK == CurrentDeadKeyNum )
+	{
+		pkl_Send( DeadKeyChar )
+		return
+	}
 
 	CurrentDeadKeyNum := DK
 	CurrentDeadKeys++
@@ -696,11 +702,12 @@ pkl_displayHelpImage( activate = 0 )
 	static HelperImage
 	static displayOnTop := 1
 	static yPosition := -1
-	static layoutDir := "#"
-	static hasAltGr
-	static extendKey
 	static imgWidth
 	static imgHeight
+	
+	global layoutDir
+	global hasAltGr
+	global extendKey
 	global CurrentDeadKeys 
 	global CurrentDeadKeyNum
 
@@ -708,10 +715,7 @@ pkl_displayHelpImage( activate = 0 )
 	if ( activate == 2 )
 		activate := 1 - 2 * guiActive
 	if ( activate == 1 ) {
-		if ( layoutDir == "#" ) {
-			layoutDir := getGlobal("layoutDir")
-			hasAltGr := getGlobal("hasAltGr")
-			extendKey  := getGlobal("extendKey")
+		if ( yPosition == -1 ) {
 			yPosition := A_ScreenHeight - 160
 			IniRead, imgWidth, %LayoutDir%\layout.ini, global, img_width, 291
 			IniRead, imgHeight, %LayoutDir%\layout.ini, global, img_height, 99
@@ -762,6 +766,15 @@ pkl_displayHelpImage( activate = 0 )
 }
 
 
+processKeyPress()
+{
+	static timerCount = 0
+	++timerCount
+	if ( timerCount >= 30 )
+		timerCount = 0
+	setTimer, processKeyPress%timerCount%, -1
+}
+
 ; ##################################### labels #####################################
 
 ShowAbout:
@@ -776,16 +789,63 @@ detectDeadKeysInCurrentLayout:
 	detectDeadKeysInCurrentLayout()
 return
 
+processKeyPress0:
+processKeyPress1:
+processKeyPress2:
+processKeyPress3:
+processKeyPress4:
+processKeyPress5:
+processKeyPress6:
+processKeyPress7:
+processKeyPress8:
+processKeyPress9:
+processKeyPress10:
+processKeyPress11:
+processKeyPress12:
+processKeyPress13:
+processKeyPress14:
+processKeyPress15:
+processKeyPress16:
+processKeyPress17:
+processKeyPress18:
+processKeyPress19:
+processKeyPress20:
+processKeyPress21:
+processKeyPress22:
+processKeyPress23:
+processKeyPress24:
+processKeyPress25:
+processKeyPress26:
+processKeyPress27:
+processKeyPress28:
+processKeyPress29:
+	Critical
+	if (ThisHotKey == "" )
+		return
+	H := ThisHotkey
+	ThisHotkey := ""
+	Critical, Off
+	keyPressed( H )
+return
+
 keyPressedwoStar: ; SC025
 	Critical
 	ThisHotkey := A_ThisHotkey
-	keyPressed( ThisHotkey )
+	processKeyPress()
 return
 
 keyPressed: ; *SC025
 	Critical
 	ThisHotkey := substr( A_ThisHotkey, 2 )
-	keyPressed( ThisHotkey )
+	processKeyPress()
+return
+
+upToDownKeyPress: ; *SC025 UP
+	Critical
+	ThisHotkey := A_ThisHotkey
+	ThisHotkey := substr( ThisHotkey, 2 )
+	ThisHotkey := substr( ThisHotkey, 1, -3 )
+	processKeyPress()
 return
 
 modifierDown:  ; *SC025
@@ -804,14 +864,6 @@ modifierUp: ; *SC025 UP
 	t = % %ThisHotkey%v
 	modifier%t%IsDown = 0
 	Send {%t% Up}
-return
-
-upToDownKeyPress: ; *SC025 UP
-	Critical
-	ThisHotkey := A_ThisHotkey
-	ThisHotkey := substr( ThisHotkey, 2 )
-	ThisHotkey := substr( ThisHotkey, 1, -3 )
-	keyPressed( ThisHotkey )
 return
 
 displayHelpImage:
