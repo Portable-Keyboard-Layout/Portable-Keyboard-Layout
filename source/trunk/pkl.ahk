@@ -5,8 +5,8 @@
 #SingleInstance force
 #MaxHotkeysPerInterval 300
 
-pkl_version = 0.2
-pkl_compiled = 2008.02.23.
+pkl_version = 0.3.a2
+pkl_compiled = 2008.05.23.
 
 SendMode Event
 SetBatchLines, -1
@@ -697,6 +697,15 @@ pkl_MsgBox( msg, s = "", p = "", q = "", r = "" )
 
 pkl_displayHelpImage( activate = 0 )
 {
+	; Parameter:
+	; 0 = display, if activated
+	;-1 = deactivate
+	; 1 = activate
+	; 2 = toggle
+	; 3 = suspend on
+	; 4 = suspend off
+
+	static guiActiveBeforeSuspend := 0
 	static guiActive := 0
 	static prevFile
 	static HelperImage
@@ -715,12 +724,26 @@ pkl_displayHelpImage( activate = 0 )
 	if ( activate == 2 )
 		activate := 1 - 2 * guiActive
 	if ( activate == 1 ) {
+		guiActive = 1
+	} else if ( activate == -1 ) {
+		guiActive = 0
+	} else if ( activate == 3 ) {
+		guiActiveBeforeSuspend := guiActive
+		activate = -1
+		guiActive = 0
+	} else if ( activate == 4 ) {
+		if ( guiActiveBeforeSuspend == 1 && guiActive != 1) {
+			activate = 1
+			guiActive = 1
+		}
+	}
+		
+	if ( activate == 1 ) {
 		if ( yPosition == -1 ) {
 			yPosition := A_ScreenHeight - 160
 			IniRead, imgWidth, %LayoutDir%\layout.ini, global, img_width, 291
 			IniRead, imgHeight, %LayoutDir%\layout.ini, global, img_height, 99
 		}
-		guiActive = 1
 		Gui, 2:+AlwaysOnTop -Border +ToolWindow
 		Gui, 2:margin, 0, 0
 		Gui, 2:Add, Pic, xm vHelperImage
@@ -729,7 +752,6 @@ pkl_displayHelpImage( activate = 0 )
 		setTimer, displayHelpImage, 200
 	} else if ( activate == -1 ) {
 		setTimer, displayHelpImage, off
-		guiActive = 0
 		Gui, 2:Destroy
 		return
 	}
@@ -880,14 +902,16 @@ LAlt & RCtrl::
 ScrollLock & F12::
 ToggleSuspend:
 	Suspend
-	if ( A_IsCompiled ) {
-		if ( A_IsSuspended )
+	if ( A_IsSuspended ) {
+		pkl_displayHelpImage(3)
+		if ( A_IsCompiled )
 			Menu, tray, Icon, %A_ScriptName%, 3
 		else
-			Menu, tray, Icon, %A_ScriptName%, 6
-	} else {
-		if ( A_IsSuspended )
 			Menu, tray, Icon, off.ico
+	} else {
+		pkl_displayHelpImage(4)
+		if ( A_IsCompiled )
+			Menu, tray, Icon, %A_ScriptName%, 6
 		else
 			Menu, tray, Icon, on.ico
 	}
