@@ -16,7 +16,8 @@ SetBatchLines, -1
 Process, Priority, , R
 SetWorkingDir, %A_ScriptDir%
 
-layoutDir   = ; The directory of the layout
+layout       = ; The active layout
+layoutDir   = ; The directory of the active layout
 hasAltGr    = 0 ; Did work Right alt as altGr in the layout?
 extendKey = ; With this you can use ijkl as arrows, etc.
 CurrentDeadKeys = 0 ; How many dead key were pressed
@@ -32,7 +33,7 @@ return
 
 pkl_init( layoutFromCommandLine = "" )
 {
-	if ( !FileExist("pkl.ini") ) {
+	if ( not FileExist("pkl.ini") ) {
 		msgBox, pkl.ini file NOT FOUND`nSorry. The program will exit.
 		ExitApp
 	}
@@ -208,6 +209,28 @@ pkl_init( layoutFromCommandLine = "" )
 	} else {
 		setGlobal("pkl_SuspendHotkey", pkl_locale_string(16) )
 	}
+	
+	if ( FileExist( getGlobal("layoutDir") . "\on.ico") ) {
+		setGlobal("trayIconFileOn", getGlobal("layoutDir") . "\on.ico")
+		setGlobal("trayIconNumOn", 1)
+	} else if ( A_IsCompiled ) {
+		setGlobal("trayIconFileOn", A_ScriptName)
+		setGlobal("trayIconNumOn", 6)
+	} else {
+		setGlobal("trayIconFileOn", "on.ico")
+		setGlobal("trayIconNumOn", 1)
+	}
+	if ( FileExist( getGlobal("layoutDir") . "\off.ico") ) {
+		setGlobal("trayIconFileOff", getGlobal("layoutDir") . "\off.ico")
+		setGlobal("trayIconNumOff", 1)
+	} else if ( A_IsCompiled ) {
+		setGlobal("trayIconFileOff", A_ScriptName)
+		setGlobal("trayIconNumOff", 3)
+	} else {
+		setGlobal("trayIconFileOff", "off.ico")
+		setGlobal("trayIconNumOff", 1)
+	}
+
 
 
 	pkl_set_tray_menu()
@@ -219,6 +242,9 @@ pkl_init( layoutFromCommandLine = "" )
 
 pkl_set_tray_menu()
 {
+	global trayIconFileOn
+	global trayIconNumOn
+	
 	about := pkl_locale_string(9)
 	susp := pkl_locale_string(10) . " (" . getGlobal("pkl_SuspendHotkey") . ")"
 	exit := pkl_locale_string(11)
@@ -229,7 +255,6 @@ pkl_set_tray_menu()
 		Menu, tray, NoStandard
 	else
 		Menu, tray, add, 
-	Menu, Tray, Icon,,, 1 ; Freeze the icon
 	Menu, tray, add, %about%, ShowAbout
 	Menu, tray, add, %susp%, toggleSuspend
 	Menu, tray, add, %deadk%, detectDeadKeysInCurrentLayout
@@ -238,10 +263,8 @@ pkl_set_tray_menu()
 	Menu, tray, Default , %susp%
 	Menu, Tray, Click, 1 
 	
-	if ( A_IsCompiled )
-		Menu, tray, Icon, %A_ScriptName%, 6
-	else
-		Menu, tray, Icon, on.ico
+	Menu, tray, Icon, %trayIconFileOn%, %trayIconNumOn%
+	Menu, Tray, Icon,,, 1 ; Freeze the icon
 }
 
 pkl_about()
@@ -934,16 +957,10 @@ ToggleSuspend:
 	Suspend
 	if ( A_IsSuspended ) {
 		pkl_displayHelpImage(3)
-		if ( A_IsCompiled )
-			Menu, tray, Icon, %A_ScriptName%, 3
-		else
-			Menu, tray, Icon, off.ico
+		Menu, tray, Icon, %trayIconFileOff%, %trayIconNumOff%
 	} else {
 		pkl_displayHelpImage(4)
-		if ( A_IsCompiled )
-			Menu, tray, Icon, %A_ScriptName%, 6
-		else
-			Menu, tray, Icon, on.ico
+		Menu, tray, Icon, %trayIconFileOn%, %trayIconNumOn%
 	}
 return
 
