@@ -3,10 +3,13 @@
 #NoTrayIcon
 #InstallKeybdHook
 #SingleInstance force
+#MaxThreadsBuffer
+#MaxThreadsPerHotkey  3
 #MaxHotkeysPerInterval 300
+#MaxThreads 20
 
-pkl_version = 0.3.a2
-pkl_compiled = 2008.05.23.
+pkl_version = 0.3.a4
+pkl_compiled = Not published
 
 SendMode Event
 SetBatchLines, -1
@@ -122,13 +125,13 @@ pkl_init( layoutFromCommandLine = "" )
 		setGlobal( key . "v", virtualKeyCodeFromName(parts1) ) ; virtual key
 		setGlobal( key . "c", parts2 ) ; caps state
 		if ( parts2 == -2 ) {
-			Hotkeys_Add( "*" . key, "modifierDown" )
-			Hotkeys_Add( "*" . key " Up", "modifierUp" )
+			Hotkey, *%key%, modifierDown
+			Hotkey, *%key% Up, modifierUp
 			setGlobal( key . "v", parts1 )
 		} else if ( key == extendKey ) {
-			Hotkeys_Add( "*" . key " Up", "upToDownKeyPress" )
+			Hotkey, *%key% Up, upToDownKeyPress
 		} else {
-			Hotkeys_Add( "*" . key, "keyPressed" )
+			Hotkey, *%key%, keyPressed
 		}
 		Loop, % parts0 - 3 {
 			k = ShiftStates%A_Index%
@@ -199,7 +202,6 @@ pkl_init( layoutFromCommandLine = "" )
 			setGlobal( key . "e", parts )
 		}
 	}
-	Hotkeys_Set_All()
 	if ( getGlobal( "LAltc" ) <> "" || getGlobal( "SC038c" ) <> "" ) {
 		Hotkey, LAlt & RCtrl, Off
 		setGlobal("pkl_SuspendHotkey", pkl_locale_string(17) )
@@ -950,7 +952,6 @@ return
 #Include HexUC.ahk ; Written by Laszlo hars
 #Include Ini.ahk ; http://www.autohotkey.net/~majkinetor/Ini/Ini.ahk
 #Include SendU.ahk ; http://autohotkey.try.hu/SendU/SendU.ahk
-#Include Hotkeys.ahk ; http://autohotkey.try.hu/Hotkeys/Hotkeys.ahk
 #Include getGlobal.ahk ; http://autohotkey.try.hu/getGlobal/getGlobal.ahk
 #Include detectDeadKeysInCurrentLayout.ahk ; http://autohotkey.try.hu/detectDeadKeysInCurrentLayout/detectDeadKeysInCurrentLayout.ahk
 #Include virtualKeyCodeFromName.ahk ; http://autohotkey.try.hu/virtualKeyCodeFromName/virtualKeyCodeFromName.ahk
