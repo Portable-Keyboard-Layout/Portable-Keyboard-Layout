@@ -8,7 +8,7 @@
 #MaxHotkeysPerInterval 300
 #MaxThreads 20
 
-pkl_version = 0.3.a4
+pkl_version = 0.3.a5
 pkl_compiled = Not published
 
 SendMode Event
@@ -292,7 +292,7 @@ pkl_about()
 	llang := getLanguageStringFromDigits( llocale )
 
 	Gui, Add, Text, , Portable Keyboard Layout v%pklVersion% (%compiledAt%)
-	Gui, Add, Edit, , http://pkl.soureforde.net/
+	Gui, Add, Edit, , http://pkl.sourceforge.net/
 	Gui, Add, Text, , ......................................................................
 	Gui, Add, Text, , (c) FARKAS, Mate, 2007-2008
 	Gui, Add, Text, , %license%
@@ -786,13 +786,13 @@ pkl_displayHelpImage( activate = 0 )
 	if ( activate == 1 ) {
 		if ( yPosition == -1 ) {
 			yPosition := A_ScreenHeight - 160
-			IniRead, imgWidth, %LayoutDir%\layout.ini, global, img_width, 291
-			IniRead, imgHeight, %LayoutDir%\layout.ini, global, img_height, 99
+			IniRead, imgWidth, %LayoutDir%\layout.ini, global, img_width, 300
+			IniRead, imgHeight, %LayoutDir%\layout.ini, global, img_height, 100
 		}
 		Gui, 2:+AlwaysOnTop -Border +ToolWindow
 		Gui, 2:margin, 0, 0
 		Gui, 2:Add, Pic, xm vHelperImage
-		GuiControl,2:, HelperImage, *w%width% *h%height% %layoutDir%\state0.png
+		GuiControl,2:, HelperImage, *w%imgWidth% *h%imgHeight% %layoutDir%\state0.png
 		Gui, 2:Show, xCenter y%yPosition% AutoSize NA, pklHelperImage
 		setTimer, displayHelpImage, 200
 	} else if ( activate == -1 ) {
