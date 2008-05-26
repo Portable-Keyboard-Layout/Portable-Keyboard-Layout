@@ -8,23 +8,27 @@
 #MaxHotkeysPerInterval 300
 #MaxThreads 20
 
-pkl_version = 0.3.a5
+pkl_version = 0.3.a6
 pkl_compiled = Not published
 
 SendMode Event
 SetBatchLines, -1
+Process, Priority, , H
 Process, Priority, , R
 SetWorkingDir, %A_ScriptDir%
 
-layout       = ; The active layout
+; Global variables
+layout      = ; The active layout
 layoutDir   = ; The directory of the active layout
 hasAltGr    = 0 ; Did work Right alt as altGr in the layout?
-extendKey = ; With this you can use ijkl as arrows, etc.
+extendKey   = ; With this you can use ijkl as arrows, etc.
 CurrentDeadKeys = 0 ; How many dead key were pressed
 CurrentBaseKey  = 0 ; Current base key :)
+nextLayout = ; If you set multiple layouts, this is the next one.
+             ; see the "changeTheActiveLayout:" label!
 
-previousLayoutFromCommandLine = %1%
-pkl_init( previousLayoutFromCommandLine ) ; I would like use local variables
+layoutFromCommandLine = %1%
+pkl_init( layoutFromCommandLine ) ; I would like use local variables
 return
 
 
@@ -69,25 +73,28 @@ pkl_init( layoutFromCommandLine = "" )
 
 	IniRead, Layout, pkl.ini, pkl, layout, %A_Space%
 	StringSplit, layouts, Layout, `,
-	if ( layoutFromCommandLine ) {
-		Layout := ""
-		Loop, % layouts0 {
-			A_Layout := layouts%A_Index%
-			if ( layoutFromCommandLine == A_Layout ) {
-				index := A_Index + 1
-				Layout := layouts%index%
-			}
-		}
-		if ( Layout == "" )
-			Layout := layouts1
-	} else {
+	if ( layoutFromCommandLine )
+		Layout := layoutFromCommandLine
+	else
 		Layout := layouts1
-	}
 	if ( Layout == "" ) {
 		pkl_MsgBox( 1 )
 		ExitApp
 	}
 	setGlobal( "Layout", Layout )
+	
+	nextLayout := ""
+	Loop, % layouts0 {
+		A_Layout := layouts%A_Index%
+		if ( Layout == A_Layout ) {
+			index := A_Index + 1
+			nextLayout := layouts%index%
+		}
+	}
+	if ( nextLayout == "" )
+		nextLayout := layouts1
+	setGlobal( "nextLayout", nextLayout )
+	
 	if ( compact_mode ) {
 		LayoutFile = layout.ini
 		setGlobal( "layoutDir", "." )
@@ -943,9 +950,9 @@ return
 
 changeTheActiveLayout:
 	if ( A_IsCompiled )
-		Run %A_ScriptName% %Layout%
+		Run %A_ScriptName% %nextLayout%
 	else
-		Run %A_AhkPath% %A_ScriptName% %Layout%
+		Run %A_AhkPath% %A_ScriptName% %nextLayout%
 return
 
 
