@@ -8,7 +8,7 @@
 #MaxHotkeysPerInterval 300
 #MaxThreads 20
 
-pkl_version = 0.3.a6
+pkl_version = 0.3.a7
 pkl_compiled = Not published
 
 SendMode Event
@@ -27,8 +27,13 @@ CurrentBaseKey  = 0 ; Current base key :)
 nextLayout = ; If you set multiple layouts, this is the next one.
              ; see the "changeTheActiveLayout:" label!
 
+
 layoutFromCommandLine = %1%
 pkl_init( layoutFromCommandLine ) ; I would like use local variables
+
+Sleep, 100 ; I don't want kill myself...
+OnMessage(0x398, "MessageFromNewInstance")
+
 return
 
 
@@ -240,11 +245,20 @@ pkl_init( layoutFromCommandLine = "" )
 
 
 
+	SetTitleMatchMode 2
+	DetectHiddenWindows on
+	WinGet, id, list, %A_ScriptName%
+	if id2
+	{
+		; This is the second instance. Send all windows a message
+		PostMessage, 0x398, 422,,, ahk_id 0xFFFF
+	}
+	Sleep, 50
+
 	pkl_set_tray_menu()
 	IniRead, t, pkl.ini, pkl, displayHelpImage, 1
 	if ( t )
 		pkl_displayHelpImage( 1 )
-
 }
 
 pkl_set_tray_menu()
@@ -839,6 +853,12 @@ pkl_displayHelpImage( activate = 0 )
 	GuiControl,2:, HelperImage, *w%imgWidth% *h%imgHeight% %layoutDir%\%fileName%.png
 }
 
+MessageFromNewInstance(lparam)
+{
+	; The second instance send this message
+	if ( lparam == 422 )
+		exitApp
+}
 
 processKeyPress()
 {
@@ -950,11 +970,10 @@ return
 
 changeTheActiveLayout:
 	if ( A_IsCompiled )
-		Run %A_ScriptName% %nextLayout%
-	else
-		Run %A_AhkPath% %A_ScriptName% %nextLayout%
+		Run %A_ScriptName% /f %nextLayout%
+	else 
+		Run %A_AhkPath% /f %A_ScriptName% %nextLayout%
 return
-
 
 ; ##################################### END #####################################
 
