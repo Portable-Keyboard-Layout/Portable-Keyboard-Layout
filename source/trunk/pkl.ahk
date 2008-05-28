@@ -8,7 +8,7 @@
 #MaxHotkeysPerInterval 300
 #MaxThreads 20
 
-pkl_version = 0.3.a7
+pkl_version = 0.3.a8
 pkl_compiled = Not published
 
 SendMode Event
@@ -61,6 +61,14 @@ pkl_init( layoutFromCommandLine = "" )
 	IniRead, t, pkl.ini, pkl, exitApp, %A_Space%
 	if ( t <> "" )
 		Hotkey, %t%, ExitApp
+	
+	IniRead, t, pkl.ini, pkl, suspend, %A_Space%
+	if ( t <> "" ) {
+		Hotkey, %t%, ToggleSuspend
+	} else {
+		Hotkey, LAlt & RCtrl, ToggleSuspend
+		Hotkey, ScrollLock & F12, ToggleSuspend
+	}
 
 	IniRead, t, pkl.ini, pkl, changeLayout, %A_Space%
 	if ( t <> "" )
@@ -248,12 +256,13 @@ pkl_init( layoutFromCommandLine = "" )
 	SetTitleMatchMode 2
 	DetectHiddenWindows on
 	WinGet, id, list, %A_ScriptName%
-	if id2
+	Loop, %id%
 	{
-		; This is the second instance. Send all windows a message
-		PostMessage, 0x398, 422,,, ahk_id 0xFFFF
+		; This isn't the first instance. Send a message to all instances
+		id := id%A_Index%
+		PostMessage, 0x398, 422,,, ahk_id %id%
 	}
-	Sleep, 50
+	Sleep, 20
 
 	pkl_set_tray_menu()
 	IniRead, t, pkl.ini, pkl, displayHelpImage, 1
@@ -977,8 +986,6 @@ return
 
 ; ##################################### END #####################################
 
-LAlt & RCtrl::
-ScrollLock & F12::
 ToggleSuspend:
 	Suspend
 	if ( A_IsSuspended ) {
