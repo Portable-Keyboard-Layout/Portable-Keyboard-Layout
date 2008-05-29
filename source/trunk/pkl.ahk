@@ -8,7 +8,7 @@
 #MaxHotkeysPerInterval 300
 #MaxThreads 20
 
-pkl_version = 0.3.a10
+pkl_version = 0.3.a11
 pkl_compiled = Not published
 
 SendMode Event
@@ -271,7 +271,7 @@ pkl_init( layoutFromCommandLine = "" )
 	WinGet, id, list, %A_ScriptName%
 	Loop, %id%
 	{
-		; This isn't the first instance. Send a message to all instances
+		; This isn't the first instance. Send "kill yourself" message to all instances
 		id := id%A_Index%
 		PostMessage, 0x398, 422,,, ahk_id %id%
 	}
@@ -303,21 +303,54 @@ pkl_set_tray_menu()
 	Loop, % getGlobal( "Layouts0" )
 	{
 		l := getGlobal( "Layouts" . A_Index . "name" )
-		Menu, changeLayouts, add, %l%, changeLayoutMenu
-		if ( getGlobal( "Layouts" . A_Index . "code" ) == Layout )
-			Menu, changeLayouts, check, %l%
+		c := getGlobal( "Layouts" . A_Index . "code" )
+		Menu, changeLayout, add, %l%, changeLayoutMenu
+		if ( c == Layout ) {
+			Menu, changeLayout, Default, %l%
+			Menu, changeLayout, Check, %l%
+		}
+		
+		icon = layouts\%c%\on.ico
+		if ( not FileExist( icon ) )
+			icon = on.ico
+		MI_SetMenuItemIcon("changeLayout", A_Index, icon, 1, 16)
 	}
 
-	if ( A_IsCompiled )
+	if ( not A_IsCompiled ) {
+		tr := MI_GetMenuHandle("Tray")
+		MI_SetMenuItemIcon(tr, 1, A_AhkPath, 1, 16) ; open
+		MI_SetMenuItemIcon(tr, 2, A_WinDir "\hh.exe", 1, 16) ; help
+		SplitPath, A_AhkPath,, SpyPath
+		SpyPath = %SpyPath%\AU3_Spy.exe
+		MI_SetMenuItemIcon(tr, 4, SpyPath,   1, 16) ; spy
+		MI_SetMenuItemIcon(tr, 5, "SHELL32.dll", 147, 16) ; reload
+		MI_SetMenuItemIcon(tr, 6, A_AhkPath, 2, 16) ; edit
+		MI_SetMenuItemIcon(tr, 8, A_AhkPath, 3, 16) ; suspend
+		MI_SetMenuItemIcon(tr, 9, A_AhkPath, 4, 16) ; pause
+		MI_SetMenuItemIcon(tr, 10, "SHELL32.dll", 28, 16) ; exit
+		Menu, tray, add,
+		iconNum = 11
+	} else {
 		Menu, tray, NoStandard
-	else
-		Menu, tray, add, 
+		iconNum = 0
+	}
+	
 	Menu, tray, add, %about%, ShowAbout
-	Menu, tray, add, %changeLayout%, :changeLayouts
+	tr := MI_GetMenuHandle("Tray")
+	MI_SetMenuItemIcon(tr, ++iconNum, "SHELL32.dll", 24, 16)
+	if ( getGlobal( "Layouts0" ) > 1 ) {
+		Menu, tray, add, %changeLayout%, :changeLayout
+		MI_SetMenuItemIcon(tr, ++iconNum, "SHELL32.dll", 138, 16)
+	}
 	Menu, tray, add, %susp%, toggleSuspend
+	MI_SetMenuItemIcon(tr, ++iconNum, "SHELL32.dll", 110, 16)
 	Menu, tray, add, %deadk%, detectDeadKeysInCurrentLayout
+	MI_SetMenuItemIcon(tr, ++iconNum, "SHELL32.dll", 78, 16)
 	Menu, tray, add, %helpimage%, displayHelpImageToggle
+	MI_SetMenuItemIcon(tr, ++iconNum, "SHELL32.dll", 116, 16)
 	Menu, tray, add, %exit%, exitApp
+	MI_SetMenuItemIcon(tr, ++iconNum, "SHELL32.dll", 28, 16)
+	
 	Menu, tray, Default , %susp%
 	Menu, Tray, Click, 1 
 	
@@ -844,6 +877,7 @@ pkl_displayHelpImage( activate = 0 )
 	}
 		
 	if ( activate == 1 ) {
+		Menu, tray, Check, % pkl_locale_string(15)
 		if ( yPosition == -1 ) {
 			yPosition := A_ScreenHeight - 160
 			IniRead, imgWidth, %LayoutDir%\layout.ini, global, img_width, 300
@@ -856,6 +890,7 @@ pkl_displayHelpImage( activate = 0 )
 		Gui, 2:Show, xCenter y%yPosition% AutoSize NA, pklHelperImage
 		setTimer, displayHelpImage, 200
 	} else if ( activate == -1 ) {
+		Menu, tray, UnCheck, % pkl_locale_string(15)
 		setTimer, displayHelpImage, off
 		Gui, 2:Destroy
 		return
@@ -1053,6 +1088,7 @@ return
 
 #Include %A_ScriptDir%\_includes
 #Include HexUC.ahk ; Written by Laszlo hars
+#Include MI.ahk ; http://www.autohotkey.com/forum/viewtopic.php?t=21991
 #Include Ini.ahk ; http://www.autohotkey.net/~majkinetor/Ini/Ini.ahk
 #Include SendU.ahk ; http://autohotkey.try.hu/SendU/SendU.ahk
 #Include getGlobal.ahk ; http://autohotkey.try.hu/getGlobal/getGlobal.ahk

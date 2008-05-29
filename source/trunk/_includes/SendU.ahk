@@ -6,9 +6,9 @@ http://www.autohotkey.com
 
 ------------------------------------------------------------------------
 
-Version: 0.0.10 2008-01-25
+Version: 0.0.11 2008-03-03
 License: GNU General Public License
-Author: FARKAS Máté <http://fmate14.try.hu> (My given name is Máté)
+Author: FARKAS Máté <http://fmate14.try.hu/> (My given name is Máté)
 
 Tested Platform:  Windows XP/Vista
 Tested AutoHotkey Version: 1.0.47.04
@@ -21,15 +21,14 @@ Contributors:
 		and some bugfixes
 	* Shimanov
 		original SendU function
+	* Piz
+		Fixed goto issues
+		http://www.autohotkey.com/forum/viewtopic.php?p=182218#182218
 
 ------------------------------------------------------------------------
 
 If you would like help to me...
 Please correct my english misspellings...
-
-------------------------------------------------------------------------
-
-TODO: save/load dynamic modes to/from file
 
 ------------------------------------------------------------------------
 */
@@ -479,30 +478,40 @@ _SendU_Load_Locale()
 ; LABELS AND INCLUDES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-return
+__SendU_Labels_And_Includes__This_Is_Not_A_Function()
+{
+	return
+	
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	; LABELS for internal use
+	
+	_SendU_Remove_Tooltip:
+		SetTimer, _SendU_Remove_Tooltip, Off
+		ToolTip
+	return
 
-_SendU_Remove_Tooltip:
-	SetTimer, _SendU_Remove_Tooltip, Off
-	ToolTip
-return
+	_SendU_Restore_Clipboard:
+		Critical
+		if ( _SendU_Last_Char_In_Clipboard() == Clipboard )
+			_SendU_RestoreClipboard()
+		_SendU_Last_Char_In_Clipboard( "" )
+		Critical, Off
+	return
 
-_SendU_Try_Dynamic_Mode:
-_SendU_Change_Dynamic_Mode:
-	SendU_Try_Dynamic_Mode()
-return
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	; LABELS for public use
+	
+	_SendU_Try_Dynamic_Mode:
+	_SendU_Change_Dynamic_Mode:
+		SendU_Try_Dynamic_Mode()
+	return
 
-_SendU_Toggle_Clipboard_Restore_Mode:
-	SendU_Clipboard_Restore_Mode( 2 )
-	_SendU_Dynamic_Mode_Tooltip()
-return
+	_SendU_Toggle_Clipboard_Restore_Mode:
+		SendU_Clipboard_Restore_Mode( 2 )
+		_SendU_Dynamic_Mode_Tooltip()
+	return
 
-_SendU_Restore_Clipboard:
-	Critical
-	if ( _SendU_Last_Char_In_Clipboard() == Clipboard )
-		_SendU_RestoreClipboard()
-	_SendU_Last_Char_In_Clipboard( "" )
-	Critical, Off
-return
+}
 
 #include CoHelper.ahk
 
