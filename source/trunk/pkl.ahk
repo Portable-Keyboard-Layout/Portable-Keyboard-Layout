@@ -8,7 +8,7 @@
 #MaxHotkeysPerInterval 300
 #MaxThreads 20
 
-pkl_version = 0.3.a9
+pkl_version = 0.3.a10
 pkl_compiled = Not published
 
 SendMode Event
@@ -24,8 +24,13 @@ hasAltGr    = 0 ; Did work Right alt as altGr in the layout?
 extendKey   = ; With this you can use ijkl as arrows, etc.
 CurrentDeadKeys = 0 ; How many dead key were pressed
 CurrentBaseKey  = 0 ; Current base key :)
+
 nextLayout = ; If you set multiple layouts, this is the next one.
-             ; see the "changeTheActiveLayout:" label!
+	; see the "changeTheActiveLayout:" label!
+Layouts0 = 0 ; Array size
+	; See the layout setting in the ini file
+	; LayoutsXcode = layout code
+	; LayoutsXname = layout name
 
 
 layoutFromCommandLine = %1%
@@ -65,14 +70,17 @@ pkl_init( layoutFromCommandLine = "" )
 	IniRead, t, pkl.ini, pkl, suspend, %A_Space%
 	if ( t <> "" ) {
 		Hotkey, %t%, ToggleSuspend
+		setGlobal("pkl_SuspendHotkey", t)
 	} else {
 		Hotkey, LAlt & RCtrl, ToggleSuspend
-		Hotkey, ScrollLock & F12, ToggleSuspend
+		setGlobal("pkl_SuspendHotkey", "LAlt & RCtrl" )
 	}
 
 	IniRead, t, pkl.ini, pkl, changeLayout, %A_Space%
-	if ( t <> "" )
+	if ( t <> "" ) {
 		Hotkey, %t%, changeTheActiveLayout
+		setGlobal("pkl_ChangeLayoutHotkey", t )
+	}
 	
 	IniRead, t, pkl.ini, pkl, systemsdeadkeys, %A_Space%
 	setGlobal("DeadKeysInCurrentLayout", t)
@@ -86,27 +94,38 @@ pkl_init( layoutFromCommandLine = "" )
 
 	IniRead, Layout, pkl.ini, pkl, layout, %A_Space%
 	StringSplit, layouts, Layout, `,
+	setGlobal( "Layouts0", layouts0 )
+	Loop, % layouts0 {
+		StringSplit, parts, layouts%A_Index%, :
+		A_Layout := parts1
+		if ( parts0 > 1 )
+			A_Name := parts2
+		else
+			A_Name := parts1
+		setGlobal( "Layouts" . A_Index . "code", A_Layout )
+		setGlobal( "Layouts" . A_Index . "name", A_Name )
+	}
+	
 	if ( layoutFromCommandLine )
 		Layout := layoutFromCommandLine
 	else
-		Layout := layouts1
+		Layout := getGlobal( "Layouts1code" )
 	if ( Layout == "" ) {
 		pkl_MsgBox( 1 )
 		ExitApp
 	}
 	setGlobal( "Layout", Layout )
 	
-	nextLayout := ""
+	nextLayoutIndex := 1
 	Loop, % layouts0 {
-		A_Layout := layouts%A_Index%
-		if ( Layout == A_Layout ) {
-			index := A_Index + 1
-			nextLayout := layouts%index%
+		if ( Layout == getGlobal( "Layouts" . A_Index . "code") ) {
+			nextLayoutIndex := A_Index + 1
+			break
 		}
 	}
-	if ( nextLayout == "" )
-		nextLayout := layouts1
-	setGlobal( "nextLayout", nextLayout )
+	if ( nextLayoutIndex > layouts0 )
+			nextLayoutIndex := 1
+	setGlobal( "nextLayout", getGlobal( "Layouts" . nextLayoutIndex . "code" ) )
 	
 	if ( compact_mode ) {
 		LayoutFile = layout.ini
@@ -223,12 +242,6 @@ pkl_init( layoutFromCommandLine = "" )
 			setGlobal( key . "e", parts )
 		}
 	}
-	if ( getGlobal( "LAltc" ) <> "" || getGlobal( "SC038c" ) <> "" ) {
-		Hotkey, LAlt & RCtrl, Off
-		setGlobal("pkl_SuspendHotkey", pkl_locale_string(17) )
-	} else {
-		setGlobal("pkl_SuspendHotkey", pkl_locale_string(16) )
-	}
 	
 	if ( FileExist( getGlobal("layoutDir") . "\on.ico") ) {
 		setGlobal("trayIconFileOn", getGlobal("layoutDir") . "\on.ico")
@@ -274,18 +287,33 @@ pkl_set_tray_menu()
 {
 	global trayIconFileOn
 	global trayIconNumOn
+	global Layout
+	global pkl_ChangeLayoutHotkey
+	global pkl_SuspendHotkey
 	
 	about := pkl_locale_string(9)
-	susp := pkl_locale_string(10) . " (" . getGlobal("pkl_SuspendHotkey") . ")"
+	susp := pkl_locale_string(10) . " (" . AddAtForMenu(pkl_SuspendHotkey) . ")"
 	exit := pkl_locale_string(11)
 	deadk := pkl_locale_string(12)
 	helpimage := pkl_locale_string(15)
+	changeLayout := pkl_locale_string(18)
+	if ( pkl_ChangeLayoutHotkey != "" )
+		changeLayout .= " (" . AddAtForMenu(pkl_ChangeLayoutHotkey) . ")"
+	
+	Loop, % getGlobal( "Layouts0" )
+	{
+		l := getGlobal( "Layouts" . A_Index . "name" )
+		Menu, changeLayouts, add, %l%, changeLayoutMenu
+		if ( getGlobal( "Layouts" . A_Index . "code" ) == Layout )
+			Menu, changeLayouts, check, %l%
+	}
 
 	if ( A_IsCompiled )
 		Menu, tray, NoStandard
 	else
 		Menu, tray, add, 
 	Menu, tray, add, %about%, ShowAbout
+	Menu, tray, add, %changeLayout%, :changeLayouts
 	Menu, tray, add, %susp%, toggleSuspend
 	Menu, tray, add, %deadk%, detectDeadKeysInCurrentLayout
 	Menu, tray, add, %helpimage%, displayHelpImageToggle
@@ -703,9 +731,10 @@ pkl_locale_default()
 	m13 = License: GPL v3
 	m14 = This program comes with`nABSOLUTELY NO WARRANTY`nThis is free software, and you`nare welcome to redistribute it`nunder certain conditions.
 	m15 = Display help image
-	m16 = Left Alt + Right Ctrl
-	m17 = Scroll Lock + F12
-	Loop, 17
+	m16 = 
+	m17 = 
+	m18 = Change the layout
+	Loop, 18
 	{
 		setGlobal( "pkl_Locale_" . A_Index, m%A_Index% )
 	}
@@ -726,7 +755,8 @@ pkl_locale_load( lang, compact = 0 )
 		val := subStr(A_LoopField, pos+1 )
 		StringReplace, val, val, \n, `n, A
 		StringReplace, val, val, \\, \, A
-		setGlobal( "pkl_Locale_" . key, val )
+		if ( val != "" ) 
+			setGlobal( "pkl_Locale_" . key, val )
 	}
 	line := Ini_LoadSection( file, "SendU" )
 	Loop, parse, line, `r`n
@@ -862,6 +892,12 @@ pkl_displayHelpImage( activate = 0 )
 	GuiControl,2:, HelperImage, *w%imgWidth% *h%imgHeight% %layoutDir%\%fileName%.png
 }
 
+AddAtForMenu( menuItem )
+{
+	StringReplace, menuItem, menuItem, & , &&, 1
+	return menuItem
+}
+
 MessageFromNewInstance(lparam)
 {
 	; The second instance send this message
@@ -994,6 +1030,11 @@ changeTheActiveLayout:
 		Run %A_ScriptName% /f %nextLayout%
 	else 
 		Run %A_AhkPath% /f %A_ScriptName% %nextLayout%
+return
+
+changeLayoutMenu:
+	nextLayout := Layouts%A_ThisMenuItemPos%code
+	goto changeTheActiveLayout
 return
 
 ; ##################################### END #####################################
