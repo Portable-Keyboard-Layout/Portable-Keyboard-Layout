@@ -8,7 +8,7 @@
 #MaxHotkeysPerInterval 300
 #MaxThreads 20
 
-pkl_version = 0.3.a8
+pkl_version = 0.3.a9
 pkl_compiled = Not published
 
 SendMode Event
@@ -869,13 +869,31 @@ MessageFromNewInstance(lparam)
 		exitApp
 }
 
-processKeyPress()
+processKeyPress( ThisHotkey )
 {
+	Critical
+	global HotkeysBuffer
+	HotkeysBuffer .= ThisHotkey . "¤"
+	
 	static timerCount = 0
 	++timerCount
 	if ( timerCount >= 30 )
 		timerCount = 0
 	setTimer, processKeyPress%timerCount%, -1
+}
+
+runKeyPress()
+{
+	Critical
+	global HotkeysBuffer
+	pos := InStr( HotkeysBuffer, "¤" )
+	if ( pos <= 0 )
+		return
+	ThisHotkey := SubStr( HotkeysBuffer, 1, pos - 1 )
+	StringTrimLeft, HotkeysBuffer, HotkeysBuffer, %pos%
+	Critical, Off
+
+	keyPressed( ThisHotkey )
 }
 
 ; ##################################### labels #####################################
@@ -922,25 +940,19 @@ processKeyPress26:
 processKeyPress27:
 processKeyPress28:
 processKeyPress29:
-	Critical
-	if (ThisHotKey == "" )
-		return
-	H := ThisHotkey
-	ThisHotkey := ""
-	Critical, Off
-	keyPressed( H )
+	runKeyPress()
 return
 
 keyPressedwoStar: ; SC025
 	Critical
 	ThisHotkey := A_ThisHotkey
-	processKeyPress()
+	processKeyPress( ThisHotkey )
 return
 
 keyPressed: ; *SC025
 	Critical
 	ThisHotkey := substr( A_ThisHotkey, 2 )
-	processKeyPress()
+	processKeyPress( ThisHotkey )
 return
 
 upToDownKeyPress: ; *SC025 UP
@@ -948,7 +960,7 @@ upToDownKeyPress: ; *SC025 UP
 	ThisHotkey := A_ThisHotkey
 	ThisHotkey := substr( ThisHotkey, 2 )
 	ThisHotkey := substr( ThisHotkey, 1, -3 )
-	processKeyPress()
+	processKeyPress( ThisHotkey )
 return
 
 modifierDown:  ; *SC025
