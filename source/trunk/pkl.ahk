@@ -8,7 +8,7 @@
 #MaxHotkeysPerInterval 300
 #MaxThreads 20
 
-pkl_version = 0.3.a11
+pkl_version = 0.3.a12
 pkl_compiled = Not published
 
 SendMode Event
@@ -21,7 +21,7 @@ SetWorkingDir, %A_ScriptDir%
 layout      = ; The active layout
 layoutDir   = ; The directory of the active layout
 hasAltGr    = 0 ; Did work Right alt as altGr in the layout?
-extendKey   = ; With this you can use ijkl as arrows, etc.
+extendKey   = ; With this you can use qwerty's ijkl as arrows, etc.
 CurrentDeadKeys = 0 ; How many dead key were pressed
 CurrentBaseKey  = 0 ; Current base key :)
 
@@ -65,12 +65,21 @@ pkl_init( layoutFromCommandLine = "" )
 
 	IniRead, t, pkl.ini, pkl, exitApp, %A_Space%
 	if ( t <> "" )
-		Hotkey, %t%, ExitApp
+	{
+		Loop, parse, t, `,
+		{
+			Hotkey, %A_LoopField%, ExitApp
+		}
+	}
 	
 	IniRead, t, pkl.ini, pkl, suspend, %A_Space%
 	if ( t <> "" ) {
-		Hotkey, %t%, ToggleSuspend
-		setGlobal("pkl_SuspendHotkey", t)
+		Loop, parse, t, `,
+		{
+			Hotkey, %A_LoopField%, ToggleSuspend
+			if ( A_Index == 1 )
+				setGlobal("pkl_SuspendHotkey", A_LoopField)
+		}
 	} else {
 		Hotkey, LAlt & RCtrl, ToggleSuspend
 		setGlobal("pkl_SuspendHotkey", "LAlt & RCtrl" )
@@ -78,8 +87,12 @@ pkl_init( layoutFromCommandLine = "" )
 
 	IniRead, t, pkl.ini, pkl, changeLayout, %A_Space%
 	if ( t <> "" ) {
-		Hotkey, %t%, changeTheActiveLayout
-		setGlobal("pkl_ChangeLayoutHotkey", t )
+		Loop, parse, t, `,
+		{
+			Hotkey, %A_LoopField%, changeTheActiveLayout
+			if ( A_Index == 1 )
+				setGlobal("pkl_ChangeLayoutHotkey", A_LoopField )
+		}
 	}
 	
 	IniRead, t, pkl.ini, pkl, systemsdeadkeys, %A_Space%
@@ -87,8 +100,12 @@ pkl_init( layoutFromCommandLine = "" )
 
 	SendU_Init()
 	IniRead, t, pkl.ini, pkl, changeDynamicMode, 0
-	if ( t )
-		Hotkey, %t%, _SendU_Change_Dynamic_Mode
+	if ( t <> "" ) {
+		Loop, parse, t, `,
+		{
+			Hotkey, %A_LoopField%, _SendU_Change_Dynamic_Mode
+		}
+	}
 	IniRead, t, pkl.ini, pkl, SendUClipboardRestoreMode, 1
 		SendU_Clipboard_Restore_Mode( t )
 
@@ -1090,8 +1107,8 @@ return
 #Include HexUC.ahk ; Written by Laszlo hars
 #Include MI.ahk ; http://www.autohotkey.com/forum/viewtopic.php?t=21991
 #Include Ini.ahk ; http://www.autohotkey.net/~majkinetor/Ini/Ini.ahk
-#Include SendU.ahk ; http://autohotkey.try.hu/SendU/SendU.ahk
-#Include getGlobal.ahk ; http://autohotkey.try.hu/getGlobal/getGlobal.ahk
-#Include detectDeadKeysInCurrentLayout.ahk ; http://autohotkey.try.hu/detectDeadKeysInCurrentLayout/detectDeadKeysInCurrentLayout.ahk
-#Include virtualKeyCodeFromName.ahk ; http://autohotkey.try.hu/virtualKeyCodeFromName/virtualKeyCodeFromName.ahk
-#Include getLanguageStringFromDigits.ahk ; http://autohotkey.try.hu/getLanguageStringFromDigits/getLanguageStringFromDigits.ahk
+#Include SendU.ahk ; written by FARKAS, Mate
+#Include getGlobal.ahk ; written by FARKAS, Mate
+#Include detectDeadKeysInCurrentLayout.ahk ; written by FARKAS, Mate
+#Include virtualKeyCodeFromName.ahk ; written by FARKAS, Mate
+#Include getLanguageStringFromDigits.ahk ; http://www.autohotkey.com/docs/misc/Languages.htm
