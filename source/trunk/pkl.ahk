@@ -8,8 +8,8 @@
 #MaxHotkeysPerInterval 300
 #MaxThreads 20
 
-pkl_version = 0.3.a12
-pkl_compiled = Not published
+setPklInfo( "version", "0.3.a13" )
+setPklInfo( "compiled", "Not published" )
 
 SendMode Event
 SetBatchLines, -1
@@ -18,23 +18,11 @@ Process, Priority, , R
 SetWorkingDir, %A_ScriptDir%
 
 ; Global variables
-layout      = ; The active layout
-layoutDir   = ; The directory of the active layout
-hasAltGr    = 0 ; Did work Right alt as altGr in the layout?
-extendKey   = ; With this you can use qwerty's ijkl as arrows, etc.
 CurrentDeadKeys = 0 ; How many dead key were pressed
 CurrentBaseKey  = 0 ; Current base key :)
 
-nextLayout = ; If you set multiple layouts, this is the next one.
-	; see the "changeTheActiveLayout:" label!
-Layouts0 = 0 ; Array size
-	; See the layout setting in the ini file
-	; LayoutsXcode = layout code
-	; LayoutsXname = layout name
-
-
-layoutFromCommandLine = %1%
-pkl_init( layoutFromCommandLine ) ; I would like use local variables
+t = %1% ; Layout from command line parameter
+pkl_init( t ) ; I would like use local variables
 
 Sleep, 100 ; I don't want kill myself...
 OnMessage(0x398, "MessageFromNewInstance")
@@ -78,11 +66,11 @@ pkl_init( layoutFromCommandLine = "" )
 		{
 			Hotkey, %A_LoopField%, ToggleSuspend
 			if ( A_Index == 1 )
-				setGlobal("pkl_SuspendHotkey", A_LoopField)
+				setpklInfo( "SuspendHotkey", A_LoopField )
 		}
 	} else {
 		Hotkey, LAlt & RCtrl, ToggleSuspend
-		setGlobal("pkl_SuspendHotkey", "LAlt & RCtrl" )
+		setPklInfo( "SuspendHotkey", "LAlt & RCtrl" )
 	}
 
 	IniRead, t, pkl.ini, pkl, changeLayout, %A_Space%
@@ -91,14 +79,13 @@ pkl_init( layoutFromCommandLine = "" )
 		{
 			Hotkey, %A_LoopField%, changeTheActiveLayout
 			if ( A_Index == 1 )
-				setGlobal("pkl_ChangeLayoutHotkey", A_LoopField )
+				setPklInfo( "ChangeLayoutHotkey", A_LoopField )
 		}
 	}
-	
-	IniRead, t, pkl.ini, pkl, systemsdeadkeys, %A_Space%
-	setGlobal("DeadKeysInCurrentLayout", t)
 
-	SendU_Init()
+	IniRead, t, pkl.ini, pkl, systemsdeadkeys, %A_Space%
+	setDeadKeysInCurrentLayout( t )
+
 	IniRead, t, pkl.ini, pkl, changeDynamicMode, 0
 	if ( t <> "" ) {
 		Loop, parse, t, `,
@@ -111,7 +98,7 @@ pkl_init( layoutFromCommandLine = "" )
 
 	IniRead, Layout, pkl.ini, pkl, layout, %A_Space%
 	StringSplit, layouts, Layout, `,
-	setGlobal( "Layouts0", layouts0 )
+	setLayoutInfo( "countOfLayouts", layouts0 )
 	Loop, % layouts0 {
 		StringSplit, parts, layouts%A_Index%, :
 		A_Layout := parts1
@@ -119,52 +106,52 @@ pkl_init( layoutFromCommandLine = "" )
 			A_Name := parts2
 		else
 			A_Name := parts1
-		setGlobal( "Layouts" . A_Index . "code", A_Layout )
-		setGlobal( "Layouts" . A_Index . "name", A_Name )
+		setLayoutInfo( "layout" . A_Index . "code", A_Layout )
+		setLayoutInfo( "layout" . A_Index . "name", A_Name )
 	}
 	
 	if ( layoutFromCommandLine )
 		Layout := layoutFromCommandLine
 	else
-		Layout := getGlobal( "Layouts1code" )
+		Layout := getLayoutInfo( "layout1code" )
 	if ( Layout == "" ) {
 		pkl_MsgBox( 1 )
 		ExitApp
 	}
-	setGlobal( "Layout", Layout )
+	setLayoutInfo( "active", Layout )
 	
 	nextLayoutIndex := 1
 	Loop, % layouts0 {
-		if ( Layout == getGlobal( "Layouts" . A_Index . "code") ) {
+		if ( Layout == getLayoutInfo( "layout" . A_Index . "code") ) {
 			nextLayoutIndex := A_Index + 1
 			break
 		}
 	}
 	if ( nextLayoutIndex > layouts0 )
 			nextLayoutIndex := 1
-	setGlobal( "nextLayout", getGlobal( "Layouts" . nextLayoutIndex . "code" ) )
+	setLayoutInfo( "nextLayout", getLayoutInfo( "layout" . nextLayoutIndex . "code" ) )
 	
 	if ( compact_mode ) {
 		LayoutFile = layout.ini
-		setGlobal( "layoutDir", "." )
+		setLayoutInfo( "dir", "." )
 	} else {
 		LayoutFile := "layouts\" . Layout . "\layout.ini"
 		if (not FileExist(LayoutFile)) {
 			pkl_MsgBox( 2, LayoutFile )
 			ExitApp
 		}
-		setGlobal( "layoutDir", "layouts\" . Layout )
+		setLayoutInfo( "dir", "layouts\" . Layout )
 	}
 	IniRead, ShiftStates, %LayoutFile%, global, shiftstates, 0:1
 	ShiftStates = %ShiftStates%:8:9 ; SgCap, SgCap + Shift
 	StringSplit, ShiftStates, ShiftStates, :
 	IfInString, ShiftStates, 6
-		setGlobal( "hasAltGr", 1)
+		setLayoutInfo( "hasAltGr", 1)
 	else
-		setGlobal( "hasAltGr", 0)
+		setLayoutInfo( "hasAltGr", 0)
 	IniRead, extendKey, %LayoutFile%, global, extend_key, %A_Space%
 	if ( extendKey <> "" ) {
-		setGlobal( "extendKey", extendKey )
+		setLayoutInfo( "extendKey", extendKey )
 	}
 
 	remap := Ini_LoadSection( LayoutFile, "layout" )
@@ -179,12 +166,12 @@ pkl_init( layoutFromCommandLine = "" )
 			parts2 = -1
 		else if ( parts2 == "modifier" )
 			parts2 = -2
-		setGlobal( key . "v", virtualKeyCodeFromName(parts1) ) ; virtual key
-		setGlobal( key . "c", parts2 ) ; caps state
+		setLayoutItem( key . "v", virtualKeyCodeFromName(parts1) ) ; virtual key
+		setLayoutItem( key . "c", parts2 ) ; caps state
 		if ( parts2 == -2 ) {
 			Hotkey, *%key%, modifierDown
 			Hotkey, *%key% Up, modifierUp
-			setGlobal( key . "v", parts1 )
+			setLayoutItem( key . "v", parts1 )
 		} else if ( key == extendKey ) {
 			Hotkey, *%key% Up, upToDownKeyPress
 		} else {
@@ -203,13 +190,13 @@ pkl_init( layoutFromCommandLine = "" )
 				v := asc( v )
 			} else {
 				if ( SubStr(v,1,1) == "*" ) { ; Special chars
-					setGlobal( key . k . "s", SubStr(v,2) )
+					setLayoutItem( key . k . "s", SubStr(v,2) )
 					v := "*"
 				} else if ( SubStr(v,1,1) == "=" ) { ; Special chars with {Blind}
-					setGlobal( key . k . "s", SubStr(v,2) )
+					setLayoutItem( key . k . "s", SubStr(v,2) )
 					v := "="
 				} else if ( SubStr(v,1,1) == "%" ) { ; Ligature (with unicode chars, too)
-					setGlobal( key . k . "s", SubStr(v,2) )
+					setLayoutItem( key . k . "s", SubStr(v,2) )
 					v := "%"
 				} else if ( v == "--" ) {
 					v = -- ;) Disabled
@@ -227,7 +214,7 @@ pkl_init( layoutFromCommandLine = "" )
 						}
 					}
 					if ( ligature ) { ; Ligature
-						setGlobal( key . k . "s", v )
+						setLayoutItem( key . k . "s", v )
 						v := "%"
 					} else { ; One character
 						v := "0x" . HexUC( v )
@@ -236,7 +223,7 @@ pkl_init( layoutFromCommandLine = "" )
 				}
 			}
 			if ( v != "--" )
-				setGlobal( key . k , v )
+				setLayoutItem( key . k , v )
 		}
 	}
 
@@ -248,7 +235,7 @@ pkl_init( layoutFromCommandLine = "" )
 			pos := InStr( A_LoopField, "=" )
 			key := subStr( A_LoopField, 1, pos-1 )
 			parts := subStr(A_LoopField, pos+1 )
-			setGlobal( key . "e", parts )
+			setLayoutItem( key . "e", parts )
 		}
 		remap := Ini_LoadSection( LayoutFile, "extend" )
 		Loop, parse, remap, `r`n
@@ -256,29 +243,29 @@ pkl_init( layoutFromCommandLine = "" )
 			pos := InStr( A_LoopField, "=" )
 			key := subStr( A_LoopField, 1, pos-1 )
 			parts := subStr(A_LoopField, pos+1 )
-			setGlobal( key . "e", parts )
+			setLayoutItem( key . "e", parts )
 		}
 	}
 	
-	if ( FileExist( getGlobal("layoutDir") . "\on.ico") ) {
-		setGlobal("trayIconFileOn", getGlobal("layoutDir") . "\on.ico")
-		setGlobal("trayIconNumOn", 1)
+	if ( FileExist( getLayoutInfo("dir") . "\on.ico") ) {
+		setTrayIconInfo( "FileOn", getLayoutInfo( "dir" ) . "\on.ico" )
+		setTrayIconInfo( "NumOn", 1 )
 	} else if ( A_IsCompiled ) {
-		setGlobal("trayIconFileOn", A_ScriptName)
-		setGlobal("trayIconNumOn", 6)
+		setTrayIconInfo( "FileOn", A_ScriptName )
+		setTrayIconInfo( "NumOn", 6 )
 	} else {
-		setGlobal("trayIconFileOn", "on.ico")
-		setGlobal("trayIconNumOn", 1)
+		setTrayIconInfo( "FileOn", "on.ico" )
+		setTrayIconInfo( "NumOn", 1 )
 	}
-	if ( FileExist( getGlobal("layoutDir") . "\off.ico") ) {
-		setGlobal("trayIconFileOff", getGlobal("layoutDir") . "\off.ico")
-		setGlobal("trayIconNumOff", 1)
+	if ( FileExist( getLayoutInfo( "dir" ) . "\off.ico") ) {
+		setTrayIconInfo( "FileOff", getLayoutInfo( "dir" ) . "\off.ico" )
+		setTrayIconInfo( "NumOff", 1 )
 	} else if ( A_IsCompiled ) {
-		setGlobal("trayIconFileOff", A_ScriptName)
-		setGlobal("trayIconNumOff", 3)
+		setTrayIconInfo( "FileOff", A_ScriptName )
+		setTrayIconInfo( "NumOff", 3 )
 	} else {
-		setGlobal("trayIconFileOff", "off.ico")
-		setGlobal("trayIconNumOff", 1)
+		setTrayIconInfo( "FileOff", "off.ico" )
+		setTrayIconInfo( "NumOff", 1 )
 	}
 
 
@@ -302,25 +289,25 @@ pkl_init( layoutFromCommandLine = "" )
 
 pkl_set_tray_menu()
 {
-	global trayIconFileOn
-	global trayIconNumOn
-	global Layout
-	global pkl_ChangeLayoutHotkey
-	global pkl_SuspendHotkey
+	ChangeLayoutHotkey := getPklInfo( "ChangeLayoutHotkey" )
+	SuspendHotkey := getPklInfo( "SuspendHotkey" )
+	
+	Layout := getLayoutInfo( "active" )
 	
 	about := pkl_locale_string(9)
-	susp := pkl_locale_string(10) . " (" . AddAtForMenu(pkl_SuspendHotkey) . ")"
+	susp := pkl_locale_string(10) . " (" . AddAtForMenu(SuspendHotkey) . ")"
 	exit := pkl_locale_string(11)
 	deadk := pkl_locale_string(12)
 	helpimage := pkl_locale_string(15)
 	changeLayout := pkl_locale_string(18)
-	if ( pkl_ChangeLayoutHotkey != "" )
-		changeLayout .= " (" . AddAtForMenu(pkl_ChangeLayoutHotkey) . ")"
+	if ( ChangeLayoutHotkey != "" )
+		changeLayout .= " (" . AddAtForMenu(ChangeLayoutHotkey) . ")"
+	layoutsMenu := pkl_locale_string(19)
 	
-	Loop, % getGlobal( "Layouts0" )
+	Loop, % getLayoutInfo( "countOfLayouts" )
 	{
-		l := getGlobal( "Layouts" . A_Index . "name" )
-		c := getGlobal( "Layouts" . A_Index . "code" )
+		l := getLayoutInfo( "layout" . A_Index . "name" )
+		c := getLayoutInfo( "layout" . A_Index . "code" )
 		Menu, changeLayout, add, %l%, changeLayoutMenu
 		if ( c == Layout ) {
 			Menu, changeLayout, Default, %l%
@@ -355,31 +342,40 @@ pkl_set_tray_menu()
 	Menu, tray, add, %about%, ShowAbout
 	tr := MI_GetMenuHandle("Tray")
 	MI_SetMenuItemIcon(tr, ++iconNum, "SHELL32.dll", 24, 16)
-	if ( getGlobal( "Layouts0" ) > 1 ) {
-		Menu, tray, add, %changeLayout%, :changeLayout
+	Menu, tray, add, %helpimage%, displayHelpImageToggle
+	MI_SetMenuItemIcon(tr, ++iconNum, "SHELL32.dll", 116, 16)
+	Menu, tray, add, %deadk%, detectDeadKeysInCurrentLayout
+	MI_SetMenuItemIcon(tr, ++iconNum, "SHELL32.dll", 78, 16)
+	if ( getLayoutInfo( "countOfLayouts" ) > 1 ) {
+		Menu, tray, add, 
+		++iconNum
+		Menu, tray, add, %layoutsMenu%, :changeLayout
+		MI_SetMenuItemIcon(tr, ++iconNum, "SHELL32.dll", 44, 16)
+		Menu, tray, add, %changeLayout%, changeTheActiveLayout
 		MI_SetMenuItemIcon(tr, ++iconNum, "SHELL32.dll", 138, 16)
 	}
 	Menu, tray, add, %susp%, toggleSuspend
 	MI_SetMenuItemIcon(tr, ++iconNum, "SHELL32.dll", 110, 16)
-	Menu, tray, add, %deadk%, detectDeadKeysInCurrentLayout
-	MI_SetMenuItemIcon(tr, ++iconNum, "SHELL32.dll", 78, 16)
-	Menu, tray, add, %helpimage%, displayHelpImageToggle
-	MI_SetMenuItemIcon(tr, ++iconNum, "SHELL32.dll", 116, 16)
+	Menu, tray, add, 
+	++iconNum
 	Menu, tray, add, %exit%, exitApp
 	MI_SetMenuItemIcon(tr, ++iconNum, "SHELL32.dll", 28, 16)
+
+	if ( getLayoutInfo( "countOfLayouts" ) > 1 ) {
+		Menu, tray, Default , %changeLayout%
+	} else {
+		Menu, tray, Default , %susp%
+	}
 	
-	Menu, tray, Default , %susp%
-	Menu, Tray, Click, 1 
-	
-	Menu, tray, Icon, %trayIconFileOn%, %trayIconNumOn%
+	Menu, tray, Icon, % getTrayIconInfo( "FileOn" ), % getTrayIconInfo( "NumOn" )
 	Menu, Tray, Icon,,, 1 ; Freeze the icon
 }
 
 pkl_about()
 {
-	lfile := getGlobal( "layoutDir" ) . "\layout.ini"
-	pklVersion := getGlobal( "pkl_version" )
-	compiledAt := getGlobal( "pkl_compiled" )
+	lfile := getLayoutInfo( "dir" ) . "\layout.ini"
+	pklVersion := getPklInfo( "version" )
+	compiledAt := getPklInfo( "compiled" )
 
 	unknown := pkl_locale_string(3)
 	active_layout := pkl_locale_string(4)
@@ -425,8 +421,8 @@ keyPressed( HK )
 	modif = ; modifiers to send
 	state = 0
 	if ( extendKey == "--" )
-		extendKey := getGlobal( "extendKey" )
-	cap := getGlobal( HK . "c" )
+		extendKey := getLayoutInfo( "extendKey" )
+	cap := getLayoutItem( HK . "c" )
 	
 	if ( extendKey && getKeyState( extendKey, "P" ) ) {
 		extendKeyStroke = 1
@@ -437,13 +433,13 @@ keyPressed( HK )
 		Send {RShift Up}{LCtrl Up}{LAlt Up}{LWin Up}
 		return
 	} else if ( cap == -1 ) {
-		t := getGlobal( HK . "v" )
+		t := getLayoutItem( HK . "v" )
 		t = {VK%t%}
 		Send {Blind}%t%
 		return
 	}
 	extendKeyStroke = 0
-	if ( getGlobal("hasAltGr") ) {
+	if ( getLayoutInfo("hasAltGr") ) {
 		if ( getKeyState("RAlt") ) {  ; AltGr
 			sh := getKeyState("Shift")
 			if ( (cap & 4) && getKeyState("CapsLock", "T") )
@@ -473,7 +469,7 @@ keyPressed( HK )
 		modif .= "#"
 
 
-	ch := getGlobal( HK . state )
+	ch := getLayoutItem( HK . state )
 	if ( ch == 32 && HK == "SC039" ) {
 		Send, {Blind}{Space}
 	} else if ( ( ch + 0 ) > 0 ) {
@@ -485,7 +481,7 @@ keyPressed( HK )
 		else
 			modif := ""
 		
-		ch := getGlobal( HK . state . "s" )
+		ch := getLayoutItem( HK . state . "s" )
 		if ( ch == "{CapsLock}" ) {
 			toggleCapsLock()
 		} else {
@@ -493,7 +489,7 @@ keyPressed( HK )
 			if ( ch != "" ) {
 				toSend = %modif%%ch%
 			} else {
-				ch := getGlobal( HK . "0s" )
+				ch := getLayoutItem( HK . "0s" )
 				if ( ch != "" )
 					ToSend = %modif%%ch%
 			}
@@ -502,7 +498,7 @@ keyPressed( HK )
 			Send, %toSend%
 		}
 	} else if ( ch == "%" ) {
-		SendU_utf8_string( getGlobal( HK . state . "s" ) )
+		SendU_utf8_string( getLayoutItem( HK . state . "s" ) )
 	} else if ( ch < 0 ) {
 		DeadKey( -1 * ch )
 	}
@@ -515,7 +511,7 @@ extendKeyPressed( HK )
 	static altPressed := ""
 	static winPressed := ""
 
-	ch := getGlobal( HK . "e" )
+	ch := getLayoutItem( HK . "e" )
 	if ( ch == "") {
 		return
 	} else if ( ch == "Shift" ) {
@@ -604,9 +600,13 @@ toggleCapsLock()
 DeadKeyValue( dk, base )
 {
 	static file := ""
-	if ( file == "" )
-		file := getGlobal( "layoutDir" ) . "\layout.ini"
-	res := getGlobal( "DK" . dk . "_" . base )
+	static pdic := 0
+	if ( file == "" ) {
+		file := getLayoutInfo( "dir" ) . "\layout.ini"
+		pdic := HashTable_New()
+	}
+	
+	res := HashTable_Get( pdic, dk . "_" . base )
 	if ( res ) {
 		if ( res == -1 ) 
 			res = 0
@@ -615,7 +615,7 @@ DeadKeyValue( dk, base )
 	IniRead, res, %file%, deadkey%dk%, %base%, -1`t;
 	t := InStr( res, A_Tab )
 	res := subStr( res, 1, t - 1 )
-	setGlobal( "DK" . dk . "_" . base, res)
+	HashTable_Set( pdic, dk . "_" . base, res)
 	if ( res == -1 ) 
 		res = 0
 	return res
@@ -698,7 +698,7 @@ pkl_Send( ch, modif = "" )
 		return
 	} else if ( 32 < ch && ch < 128 ) {
 		char := "{" . chr(ch) . "}"
-		if ( inStr( getGlobal("DeadKeysInCurrentLayout"), chr(ch) ) )
+		if ( inStr( getDeadKeysInCurrentLayout(), chr(ch) ) )
 			char .= "{Space}"
 	} else if ( ch == 32 ) {
 		char = {Space}
@@ -730,15 +730,15 @@ pkl_CtrlState( HK, capState, ByRef state, ByRef modif )
 		state = 2
 		if ( getKeyState("Shift") ) {
 			state++
-			if ( !getGlobal( HK . state ) ) {
+			if ( !getLayoutItem( HK . state ) ) {
 				state--
 				modif .= "+"
-				if ( !getGlobal( HK . state ) ) {
+				if ( !getLayoutItem( HK . state ) ) {
 					state = 0
 					modif .= "^"
 				}
 			}
-		} else if ( !getGlobal( HK . state ) ) {
+		} else if ( !getLayoutItem( HK . state ) ) {
 			state = 0
 			modif .= "^"
 		}
@@ -764,39 +764,39 @@ pkl_ShiftState( capState )
 }
 
 
-pkl_locale_default()
+pkl_locale_strings( msg, newValue = "", set = 0 )
 {
-	m1 = You must set the layout file in pkl.ini!
-	m2 = #s# file NOT FOUND`nSorry. The program will exit.
-	m3 = unknown
-	m4 = ACTIVE LAYOUT
-	m5 = Version
-	m6 = Language
-	m7 = Copyright
-	m8 = Company
-	m9 = About...
-	m10 = Suspend
-	m11 = Exit
-	m12 = Detect deadkeys
-	m13 = License: GPL v3
-	m14 = This program comes with`nABSOLUTELY NO WARRANTY`nThis is free software, and you`nare welcome to redistribute it`nunder certain conditions.
-	m15 = Display help image
-	m16 = 
-	m17 = 
-	m18 = Change the layout
-	Loop, 18
-	{
-		setGlobal( "pkl_Locale_" . A_Index, m%A_Index% )
+	static m1 := "You must set the layout file in pkl.ini!"
+	static m2 := "#s# file NOT FOUND`nSorry. The program will exit."
+	static m3 := "unknown"
+	static m4 := "ACTIVE LAYOUT"
+	static m5 := "Version"
+	static m6 := "Language"
+	static m7 := "Copyright"
+	static m8 := "Company"
+	static m9 := "About..."
+	static m10 := "Suspend"
+	static m11 := "Exit"
+	static m12 := "Detect deadkeys"
+	static m13 := "License: GPL v3"
+	static m14 := "This program comes with`nABSOLUTELY NO WARRANTY`nThis is free software, and you`nare welcome to redistribute it`nunder certain conditions."
+	static m15 := "Display help image"
+	static m18 := "Change layout"
+	static m19 := "Layouts"
+	if ( set == 1 ) {
+		m%msg% := newValue
 	}
+	return m%msg%
 }
+
 
 pkl_locale_load( lang, compact = 0 )
 {
-	pkl_locale_default()
 	if ( compact )
 		file = %lang%.ini
 	else 
 		file = languages\%lang%.ini
+
 	line := Ini_LoadSection( file, "pkl" )
 	Loop, parse, line, `r`n
 	{
@@ -806,8 +806,9 @@ pkl_locale_load( lang, compact = 0 )
 		StringReplace, val, val, \n, `n, A
 		StringReplace, val, val, \\, \, A
 		if ( val != "" ) 
-			setGlobal( "pkl_Locale_" . key, val )
+			pkl_locale_strings( key, val, 1)
 	}
+
 	line := Ini_LoadSection( file, "SendU" )
 	Loop, parse, line, `r`n
 	{
@@ -816,8 +817,9 @@ pkl_locale_load( lang, compact = 0 )
 		val := subStr(A_LoopField, pos+1 )
 		StringReplace, val, val, \n, `n, A
 		StringReplace, val, val, \\, \, A
-		setGlobal( "_SendU_" . key, val )
+		SendU_SetLocale( key, val )
 	}
+
 	line := Ini_LoadSection( file, "detectDeadKeys" )
 	Loop, parse, line, `r`n
 	{
@@ -826,13 +828,13 @@ pkl_locale_load( lang, compact = 0 )
 		val := subStr(A_LoopField, pos+1 )
 		StringReplace, val, val, \n, `n, A
 		StringReplace, val, val, \\, \,
-		setGlobal( "detectDeadKeys_locale_" . key, val )
+			detectDeadKeysInCurrentLayout_SetLocale( key, val )
 	}
 }
 
 pkl_locale_string( msg, s = "", p = "", q = "", r = "" )
 {
-	m := getGlobal( "pkl_Locale_" . msg )
+	m := pkl_locale_strings( msg )
 	if ( s <> "" )
 		StringReplace, m, m, #s#, %s%, A
 	if ( p <> "" )
@@ -860,6 +862,9 @@ pkl_displayHelpImage( activate = 0 )
 	; 3 = suspend on
 	; 4 = suspend off
 
+	global CurrentDeadKeys 
+	global CurrentDeadKeyNum
+
 	static guiActiveBeforeSuspend := 0
 	static guiActive := 0
 	static prevFile
@@ -869,12 +874,16 @@ pkl_displayHelpImage( activate = 0 )
 	static imgWidth
 	static imgHeight
 	
-	global layoutDir
-	global hasAltGr
-	global extendKey
-	global CurrentDeadKeys 
-	global CurrentDeadKeyNum
-
+	static layoutDir = 0
+	static hasAltGr
+	static extendKey
+	
+	if ( layoutDir == 0 )
+	{
+		layoutDir := getLayoutInfo( "dir" )
+		hasAltGr  := getLayoutInfo( "hasAltGr" )
+		extendKey := getLayoutInfo( "extendKey" )
+	}
 	
 	if ( activate == 2 )
 		activate := 1 - 2 * guiActive
@@ -984,6 +993,120 @@ runKeyPress()
 	keyPressed( ThisHotkey )
 }
 
+setLayoutItem( key, value )
+{
+	return getLayoutItem( key, value, 1 )
+}
+
+getLayoutItem( key, value = "", set = 0 )
+{
+	static pdic := 0
+	if ( pdic == 0 )
+	{
+		pdic := HashTable_New()
+	}
+	if ( set == 1 )
+		HashTable_Set( pdic, key, value )
+	else
+		return HashTable_Get( pdic, key )
+}
+
+setTrayIconInfo( var, val )
+{
+	return getTrayIconInfo( var, val, 1 )
+}
+
+getTrayIconInfo( var, val = "", set = 0 )
+{
+	static FileOn := "on.ico"
+	static NumOn := 1
+	static FileOff := "off.ico"
+	static NumOff := 1
+	if ( set == 1 )
+		%var% := val
+	return  %var% . ""
+}
+
+setLayoutInfo( var, val )
+{
+	return getLayoutInfo( var, val, 1 )
+}
+
+getLayoutInfo( key, value = "", set = 0 )
+{
+	/*
+	active    := "" ; The active layout
+	dir       := "" ; The directory of the active layout
+	hasAltGr  := 0  ; Did work Right alt as altGr in the layout?
+	extendKey := "" ; With this you can use qwerty's ijkl as arrows, etc.
+	
+	nextLayout := "" ; If you set multiple layouts, this is the next one.
+	                 ; see the "changeTheActiveLayout:" label!
+	countOfLayouts := 0 ; Array size
+	; See the layout setting in the ini file
+	LayoutsXcode = layout code
+	LayoutsXname = layout name
+	*/
+	static pdic := 0
+	if ( pdic == 0 )
+	{
+		pdic := HashTable_New()
+	}
+	if ( set == 1 )
+		HashTable_Set( pdic, key, value )
+	else
+		return HashTable_Get( pdic, key )
+}
+
+setPklInfo( key, value )
+{
+	getPklInfo( key, value, 1 )
+}
+
+getPklInfo( key, value = "", set = 0 )
+{
+	static pdic := 0
+	if ( pdic == 0 )
+	{
+		pdic := HashTable_New()
+	}
+	if ( set == 1 )
+		HashTable_Set( pdic, key, value )
+	else
+		return HashTable_Get( pdic, key )
+}
+
+setDeadKeysInCurrentLayout( deadkeys )
+{
+	getDeadKeysInCurrentLayout( deadkeys, 1 )
+}
+
+getDeadKeysInCurrentLayout( newDeadkeys = "", set = 0 )
+{
+	static deadkeys := 0
+	if ( set == 1 ) {
+		if ( newDeadkeys == "auto" )
+			deadkeys := getDeadKeysOfSystemsActiveLayout()
+		else if ( newDeadkeys == "dynamic" )
+			deadkeys := 0
+		else
+			deadkeys := newDeadkeys
+		return
+	}
+	if ( deadkeys == 0 ) 
+		return getDeadKeysOfSystemsActiveLayout()
+	else
+		return deadkeys
+}
+
+changeLayout( nextLayout )
+{
+	if ( A_IsCompiled )
+		Run %A_ScriptName% /f %nextLayout%
+	else 
+		Run %A_AhkPath% /f %A_ScriptName% %nextLayout%
+}
+
 ; ##################################### labels #####################################
 
 ShowAbout:
@@ -995,7 +1118,7 @@ exitApp:
 return
 
 detectDeadKeysInCurrentLayout:
-	detectDeadKeysInCurrentLayout()
+	setDeadKeysInCurrentLayout( detectDeadKeysInCurrentLayout() )
 return
 
 processKeyPress0:
@@ -1054,7 +1177,7 @@ return
 modifierDown:  ; *SC025
 	Critical
 	ThisHotkey := substr( A_ThisHotkey, 2 )
-	t = % %ThisHotkey%v
+	t := getLayoutItem( ThisHotkey . "v" )
 	modifier%t%IsDown = 1
 	Send {%t% Down}
 return
@@ -1064,7 +1187,7 @@ modifierUp: ; *SC025 UP
 	ThisHotkey := A_ThisHotkey
 	ThisHotkey := substr( ThisHotkey, 2 )
 	ThisHotkey := substr( ThisHotkey, 1, -3 )
-	t = % %ThisHotkey%v
+	t := getLayoutItem( ThisHotkey . "v" )
 	modifier%t%IsDown = 0
 	Send {%t% Up}
 return
@@ -1078,15 +1201,11 @@ displayHelpImageToggle:
 return
 
 changeTheActiveLayout:
-	if ( A_IsCompiled )
-		Run %A_ScriptName% /f %nextLayout%
-	else 
-		Run %A_AhkPath% /f %A_ScriptName% %nextLayout%
+	changeLayout( getLayoutInfo( "nextLayout" ) )
 return
 
 changeLayoutMenu:
-	nextLayout := Layouts%A_ThisMenuItemPos%code
-	goto changeTheActiveLayout
+	changeLayout( getLayoutInfo( "layout" . A_ThisMenuItemPos . "code" ) )
 return
 
 ; ##################################### END #####################################
@@ -1095,10 +1214,10 @@ ToggleSuspend:
 	Suspend
 	if ( A_IsSuspended ) {
 		pkl_displayHelpImage(3)
-		Menu, tray, Icon, %trayIconFileOff%, %trayIconNumOff%
+		Menu, tray, Icon, % getTrayIconInfo( "FileOff" ), % getTrayIconInfo( "NumOff" )
 	} else {
 		pkl_displayHelpImage(4)
-		Menu, tray, Icon, %trayIconFileOn%, %trayIconNumOn%
+		Menu, tray, Icon, % getTrayIconInfo( "FileOn" ), % getTrayIconInfo( "NumOn" )
 	}
 return
 
@@ -1107,8 +1226,10 @@ return
 #Include HexUC.ahk ; Written by Laszlo hars
 #Include MI.ahk ; http://www.autohotkey.com/forum/viewtopic.php?t=21991
 #Include Ini.ahk ; http://www.autohotkey.net/~majkinetor/Ini/Ini.ahk
-#Include SendU.ahk ; written by FARKAS, Mate
-#Include getGlobal.ahk ; written by FARKAS, Mate
-#Include detectDeadKeysInCurrentLayout.ahk ; written by FARKAS, Mate
-#Include virtualKeyCodeFromName.ahk ; written by FARKAS, Mate
+#Include SendU.ahk
+#Include getGlobal.ahk
+#Include HashTable.ahk
+#Include detectDeadKeysInCurrentLayout.ahk
+#Include virtualKeyCodeFromName.ahk
+#Include getDeadKeysOfSystemsActiveLayout.ahk
 #Include getLanguageStringFromDigits.ahk ; http://www.autohotkey.com/docs/misc/Languages.htm

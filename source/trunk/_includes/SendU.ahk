@@ -6,13 +6,12 @@ http://www.autohotkey.com
 
 ------------------------------------------------------------------------
 
-Version: 0.0.11 2008-03-03
+Version: 0.0.12 2008-05
 License: GNU General Public License
-Author: FARKAS Máté <http://fmate14.try.hu/> (My given name is Máté)
+Author: FARKAS, MÃ¡tÃ© <http://fmate14.try.hu/> (My given name is MÃ¡tÃ©)
 
 Tested Platform:  Windows XP/Vista
 Tested AutoHotkey Version: 1.0.47.04
-Lastest version: http://autohotkey.try.hu/SendU/SendU.ahk
 Location in AutoHotkey forum: http://www.autohotkey.com/forum/viewtopic.php?t=25566
 
 Contributors:
@@ -27,19 +26,13 @@ Contributors:
 
 ------------------------------------------------------------------------
 
-If you would like help to me...
-Please correct my english misspellings...
-
-------------------------------------------------------------------------
 */
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-; PUBLIC GLOBAL VARIABLES FOR LOCALIZE
-; See the _SendU_Load_Locale() function!
-
-; PRIVATE GLOBAL VARIABLES
-; _SendU_*** : unicode number -> utf8 character
+; You ca localize the messages, see the
+; SendU_SetLocale( variable, value ) and
+;  _SendU_GetLocale( variable, value, 1 ) functions!
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -136,7 +129,7 @@ SendU_utf8_string( str )
 
 SendU_Mode( newMode = -1 )
 {
-	static mode := "i"
+	static mode := "d"
 	if ( newmode == "d" || newMode == "i" || newmode == "a" || newmode == "c" )
 		mode := newMode
 	return mode
@@ -167,11 +160,9 @@ SendU_Try_Dynamic_Mode()
 	_SendU_Dynamic_Mode( "", 1 ) ; Clears the PrevProcess variable
 }
 
-SendU_Init( mode = "d" )
+SendU_SetLocale( variable, value )
 {
-	SendU_Mode( mode )
-	_SendU_Load_Locale()
-	_SendU_Load_Dynamic_Modes()
+	_SendU_GetLocale( variable, value, 1 )
 }
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -236,12 +227,7 @@ _SendU_Clipboard( UC, isUtfString = 0 )
 	if ( isUtfString ) {
 		utf := UC
 	} else {
-		utf := _SendU_GetVar( UC )
-		if not utf
-		{
-			utf := _SendU_UnicodeChar( UC )
-			_SendU_SetVar( UC, utf )
-		}
+		utf := _SendU_UnicodeChar( UC )
 	}
 	if restoreMode
 		_SendU_SaveClipboard()
@@ -301,9 +287,9 @@ _SendU_Get_Mode_Name( mode )
 {
 	if ( mode == "c" && SendU_Clipboard_Restore_Mode() )
 		mode = r
-	m := _SendU_GetVar( "Mode_Name_" . mode )
+	m := _SendU_GetLocale( "Mode_Name_" . mode )
 	if ( m == "" )
-		m := _SendU_GetVar( "Mode_Name_0" )
+		m := _SendU_GetLocale( "Mode_Name_0" )
 	return m
 }
 
@@ -311,15 +297,15 @@ _SendU_Get_Mode_Type( mode )
 {
 	if ( mode == "c" && SendU_Clipboard_Restore_Mode() )
 		mode = r
-	m := _SendU_GetVar( "Mode_Type_" . mode )
+	m := _SendU_GetLocale( "Mode_Type_" . mode )
 	if ( m == "" )
-		m := _SendU_GetVar( "Mode_Type_0" )
+		m := _SendU_GetLocale( "Mode_Type_0" )
 	return m
 }
 
 _SendU_Dynamic_Mode_Tooltip( processName = -1, mode = -1 )
 {
-	tt := _SendU_getVar("DYNAMIC_MODE_TOOLTIP")
+	tt := _SendU_GetLocale("DYNAMIC_MODE_TOOLTIP")
 	if not tt
 		return
 	if ( processName = -1 || mode == -1 ) {
@@ -351,128 +337,56 @@ _SendU_Dynamic_Mode( processName, clearPrevProcess = -1 )
 	return mode
 }
 
-; http://www.autohotkey.com/forum/topic17838.html
-_SendU_SetMode( sKey, sItm )
+; --------------------- other functions ----------------------------
+
+_SendU_SetMode( processName, mode )
 {
-	static pdic := 0
-	if ( pdic == 0 )
-		_SendU_Get_Dictionary( pdic )
-	pKey := SysAllocString(sKey)
-	VarSetCapacity(var1, 8 * 2, 0)
-	EncodeInteger(&var1 + 0, 8)
-	EncodeInteger(&var1 + 8, pKey)
-	pItm := SysAllocString(sItm)
-	VarSetCapacity(var2, 8 * 2, 0)
-	EncodeInteger(&var2 + 0, 8)
-	EncodeInteger(&var2 + 8, pItm)
-	DllCall(VTable(pdic, 8), "Uint", pdic, "Uint", &var1, "Uint", &var2)
-	SysFreeString(pKey)
-	SysFreeString(pItm)
+	return _SendU_GetMode( processName, mode, 1 )
 }
 
-; http://www.autohotkey.com/forum/topic17838.html
-_SendU_GetMode( sKey )
-{
-	static pdic := 0
-	if ( pdic == 0 )
-		_SendU_Get_Dictionary( pdic )
-
-	pKey := SysAllocString(sKey)
-	VarSetCapacity(var1, 8 * 2, 0)
-	EncodeInteger(&var1 + 0, 8)
-	EncodeInteger(&var1 + 8, pKey)
-	DllCall(VTable(pdic, 12), "Uint", pdic, "Uint", &var1, "intP", bExist)
-	If bExist
-	{
-		VarSetCapacity(var2, 8 * 2, 0)
-		DllCall(VTable(pdic, 9), "Uint", pdic, "Uint", &var1, "Uint", &var2)
-		pItm := DecodeInteger(&var2 + 8)
-		Unicode2Ansi(pItm, sItm)
-		SysFreeString(pItm)
-	}
-	SysFreeString(pKey)
-	Return sItm
-}
-
-_SendU_Get_Dictionary( ByRef mypdic )
+_SendU_GetMode( processName, mode = "", set = 0 )
 {
 	static pdic := 0
 	if ( pdic == 0 ) {
-		; http://www.autohotkey.com/forum/topic17838.html
-		CoInitialize()
-		CLSID_Dictionary := "{EE09B103-97E0-11CF-978F-00A02463E06F}"
-		IID_IDictionary := "{42C642C1-97E1-11CF-978F-00A02463E06F}"
-		pdic := CreateObject(CLSID_Dictionary, IID_IDictionary)
-		DllCall(VTable(pdic, 18), "Uint", pdic, "int", 1) ; Set text mode, i.e., Case of Key is ignored. Otherwise case-sensitive defaultly.
+		pdic := HashTable_New()
+		HashTable_Set( pdic,  "totalcmd_exe", "c" )
+		HashTable_Set( pdic,  "skype_exe", "c" )
 	}
-	mypdic := pdic
+	StringReplace, processName, processName, . , _, 1
+	StringReplace, processName, processName, %A_Space% , _, 1
+	
+	if ( set == 1 )
+		HashTable_Set( pdic, processName, mode )
+	else 
+		return HashTable_Get( pdic, processName )
 }
 
-_SendU_Load_Dynamic_Modes()
+_SendU_GetLocale( sKey, sVal = "", set = 0 )
 {
-	_SendU_SetMode( "totalcmd.exe", "c" )
-	_SendU_SetMode( "skype.exe", "c" )
-}
-
-; --------------------- other functions ----------------------------
-
-_SendU_SetVar( var, value )
-{
-	global
-	_SendU_%var% := value
-}
-
-_SendU_GetVar( var )
-{
-	global
-	return _SendU_%var% . ""
-}
-
-_SendU_Default_Value( var, value )
-{
-	global
-	if ( _SendU_%var% . "" == "" )
-		_SendU_%var% := value
-}
-
-_SendU_Load_Locale()
-{
-	stringLower, lang, A_Language
-	if ( lang == "040e" ) { ; Hungarian
-		_SendU_Default_Value("DYNAMIC_MODE_TOOLTIP", "Új mód a(z) $processName$ programhoz`n($title$)`n ""$mode$"" ($modeName$ - $modeType$)")
+	static pdic := 0
+	if ( pdic == 0 ) {
+		pdic := HashTable_New()
+		HashTable_Set( pdic, "DYNAMIC_MODE_TOOLTIP", "New mode for $processName$`n($title$)`nis ""$mode$"" ($modeName$ - $modeType$)")
 		
-		_SendU_Default_Value("Mode_Name_i", "SendInput")
-		_SendU_Default_Value("Mode_Name_c", "Vágólap")
-		_SendU_Default_Value("Mode_Name_r", "Vágólap helyreállítással")
-		_SendU_Default_Value("Mode_Name_a", "Alt+Számbillentyûzet")
-		_SendU_Default_Value("Mode_Name_d", "Dinamikus")
-		_SendU_Default_Value("Mode_Name_0", "Ismeretlen")
+		HashTable_Set( pdic, "Mode_Name_i", "SendInput")
+		HashTable_Set( pdic, "Mode_Name_c", "Clipboard")
+		HashTable_Set( pdic, "Mode_Name_r", "Restore Clipboard")
+		HashTable_Set( pdic, "Mode_Name_a", "Alt+Numbers")
+		HashTable_Set( pdic, "Mode_Name_d", "Dynamic")
+		HashTable_Set( pdic, "Mode_Name_0", "Unknown")
 		
-		_SendU_Default_Value("Mode_Type_i", "a legjobb, ha mûködik")
-		_SendU_Default_Value("Mode_Type_c", "törli a vágólapot")
-		_SendU_Default_Value("Mode_Type_r", "talán lassú")
-		_SendU_Default_Value("Mode_Type_a", "talán nem mûködik")
-		_SendU_Default_Value("Mode_Type_d", "programoktól függõ dinamikus mód")
-		_SendU_Default_Value("Mode_Type_0", "ismeretlen mód")
-	} else { ; English -- please, correct my mispellings!
-		_SendU_Default_Value("DYNAMIC_MODE_TOOLTIP", "New mode for $processName$`n($title$)`nis ""$mode$"" ($modeName$ - $modeType$)")
-		
-		_SendU_Default_Value("Mode_Name_i", "SendInput")
-		_SendU_Default_Value("Mode_Name_c", "Clipboard")
-		_SendU_Default_Value("Mode_Name_r", "Restore Clipboard")
-		_SendU_Default_Value("Mode_Name_a", "Alt+Numbers")
-		_SendU_Default_Value("Mode_Name_d", "Dynamic")
-		_SendU_Default_Value("Mode_Name_0", "Unknown")
-		
-		_SendU_Default_Value("Mode_Type_i", "the best, if works")
-		_SendU_Default_Value("Mode_Type_c", "clears the clipboard")
-		_SendU_Default_Value("Mode_Type_r", "maybe slow")
-		_SendU_Default_Value("Mode_Type_a", "maybe not work")
-		_SendU_Default_Value("Mode_Type_d", "dynamic mode for the programs")
-		_SendU_Default_Value("Mode_Type_0", "unknown mode")
+		HashTable_Set( pdic, "Mode_Type_i", "the best, if works")
+		HashTable_Set( pdic, "Mode_Type_c", "clears the clipboard")
+		HashTable_Set( pdic, "Mode_Type_r", "maybe slow")
+		HashTable_Set( pdic, "Mode_Type_a", "maybe not work")
+		HashTable_Set( pdic, "Mode_Type_d", "dynamic mode for the programs")
+		HashTable_Set( pdic, "Mode_Type_0", "unknown mode")
 	}
+	if ( set == 1 )
+		HashTable_Set( pdic, sKey, sVal )
+	else 
+		return HashTable_Get( pdic, sKey )
 }
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; LABELS AND INCLUDES
@@ -514,6 +428,7 @@ __SendU_Labels_And_Includes__This_Is_Not_A_Function()
 }
 
 #include CoHelper.ahk
+#include HashTable.ahk
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; END OF SENDU MODULE

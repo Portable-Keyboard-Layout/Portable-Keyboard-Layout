@@ -6,18 +6,12 @@ http://www.autohotkey.com
 
 ------------------------------------------------------------------------
 
-Version: 0.0.2 2008-01-24
+Version: 0.0.3 2008-05
 License: GNU General Public License
 Author: FARKAS Máté <http://fmate14.try.hu> (My given name is Máté)
 
 Tested Platform:  Windows XP/Vista
 Tested AutoHotkey Version: 1.0.47.04
-Lastest version: http://autohotkey.try.hu/detectDeadKeysInCurrentLayout/detectDeadKeysInCurrentLayout.ahk
-
-------------------------------------------------------------------------
-
-If you would like help to me...
-Please correct my english misspellings...
 
 ------------------------------------------------------------------------
 
@@ -28,33 +22,22 @@ TODO: A better version without Send/Clipboard (I don't have idea)
 Why? In hungarian keyboard layout ~ is a dead key: 
 	Send ~o ; is o with ~ accent
 	Send ~ ; is nothing
-	Send ~{Space} ; is space
+	Send ~{Space} ; is ~ character
 So... If I would like send ~, I must send ~{Space}. This script detect these characters
 
 ------------------------------------------------------------------------
 */
 
-if not DeadKeysInCurrentLayout
-	DeadKeysInCurrentLayout = ;
-
-
 detectDeadKeysInCurrentLayout()
 {
-	global detectDeadKeys_locale_MSGBOX_TITLE
-	global detectDeadKeys_locale_MSGBOX
-	global detectDeadKeys_locale_EDITOR
 	global DeadKeysInCurrentLayout
 	possibleDeadKeys = ~ ^ ` *
 	DeadKeysInCurrentLayout = ;
 	
-	if ( detectDeadKeys_locale_MSGBOX_TITLE == "" ) {
-		detectDeadKeys_locale_MSGBOX_TITLE = Open Notepad?
-		detectDeadKeys_locale_MSGBOX = To detect the deadkeys in your current keyboard layout,`nI need an editor.`n`nClick Yes to open the Notepad`nClick No if you already in an editor`nClick Cancel if you KNOW, your system doesn't have dead keys
-		detectDeadKeys_locale_EDITOR = Detecting deadkeys... Do not interrupt!
-	}
-	
 	notepadMode = 0
-	MsgBox 51, %detectDeadKeys_locale_MSGBOX_TITLE%, %detectDeadKeys_locale_MSGBOX%
+	t := _detectDeadKeysInCurrentLayout_GetLocale( "MSGBOX_TITLE" )
+	x := _detectDeadKeysInCurrentLayout_GetLocale( "MSGBOX" )
+	MsgBox 51, %t%, %x%
 	IfMsgBox Cancel
 		return
 	IfMsgBox Yes
@@ -62,7 +45,8 @@ detectDeadKeysInCurrentLayout()
 		notepadMode = 1
 		Run Notepad
 		Sleep 2000
-		SendInput {RAW}%detectDeadKeys_locale_EDITOR%
+		e := _detectDeadKeysInCurrentLayout_GetLocale( "EDITOR" )
+		SendInput {RAW}%e%
 	} else {
 		Send `n{Space}+{Home}{Del}
 	}
@@ -77,6 +61,22 @@ detectDeadKeysInCurrentLayout()
 	}
 	Send {Ctrl Up}{Shift Up}
 	Send +{Home}{Del}{Backspace}
-	if (notepadMode)
+	if ( notepadMode )
 		Send !{F4}
+}
+
+detectDeadKeysInCurrentLayout_SetLocale( variable, value )
+{
+	_detectDeadKeysInCurrentLayout_GetLocale( variable, value, 1 )
+}
+
+_detectDeadKeysInCurrentLayout_GetLocale( variable, value = "", set = 0 )
+{
+	static lMSGBOX_TITLE := "Open Notepad?"
+	static lMSGBOX := "To detect the deadkeys in your current keyboard layout,`nI need an editor.`n`nClick Yes to open the Notepad`nClick No if you already in an editor`nClick Cancel if you KNOW, your system doesn't have dead keys"
+	static lEDITOR := "Detecting deadkeys... Do not interrupt!"
+	
+	if ( set == 1 )
+		l%variable% := value
+	return l%variable%
 }
