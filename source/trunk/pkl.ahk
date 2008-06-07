@@ -8,7 +8,7 @@
 #MaxHotkeysPerInterval 300
 #MaxThreads 20
 
-setPklInfo( "version", "0.3.a13" )
+setPklInfo( "version", "0.3.a14" )
 setPklInfo( "compiled", "Not published" )
 
 SendMode Event
@@ -289,8 +289,8 @@ pkl_init( layoutFromCommandLine = "" )
 
 pkl_set_tray_menu()
 {
-	ChangeLayoutHotkey := getPklInfo( "ChangeLayoutHotkey" )
-	SuspendHotkey := getPklInfo( "SuspendHotkey" )
+	ChangeLayoutHotkey := getHotkeyStringInLocale( getPklInfo( "ChangeLayoutHotkey" ) )
+	SuspendHotkey := getHotkeyStringInLocale( getPklInfo( "SuspendHotkey" ) )
 	
 	Layout := getLayoutInfo( "active" )
 	
@@ -363,8 +363,10 @@ pkl_set_tray_menu()
 
 	if ( getLayoutInfo( "countOfLayouts" ) > 1 ) {
 		Menu, tray, Default , %changeLayout%
+		Menu, Tray, Click, 2
 	} else {
 		Menu, tray, Default , %susp%
+		Menu, Tray, Click, 1 
 	}
 	
 	Menu, tray, Icon, % getTrayIconInfo( "FileOn" ), % getTrayIconInfo( "NumOn" )
@@ -830,6 +832,15 @@ pkl_locale_load( lang, compact = 0 )
 		StringReplace, val, val, \\, \,
 			detectDeadKeysInCurrentLayout_SetLocale( key, val )
 	}
+	
+	line := Ini_LoadSection( file, "keyNames" )
+	Loop, parse, line, `r`n
+	{
+		pos := InStr( A_LoopField, "=" )
+		key := subStr( A_LoopField, 1, pos-1 )
+		val := subStr(A_LoopField, pos+1 )
+		setHotkeyLocale( key, val )
+	}
 }
 
 pkl_locale_string( msg, s = "", p = "", q = "", r = "" )
@@ -1097,6 +1108,49 @@ getDeadKeysInCurrentLayout( newDeadkeys = "", set = 0 )
 		return getDeadKeysOfSystemsActiveLayout()
 	else
 		return deadkeys
+}
+
+setHotkeyLocale( hk, localehk )
+{
+	getHotkeyLocale( hk, localehk, 1 )
+}
+
+getHotkeyLocale( hk, localehk = "", set = 0 )
+{
+	static localizedHotkeys := ""
+	static pdic := 0
+	if ( pdic == 0 )
+	{
+		pdic := HashTable_New()
+	}
+	if ( set == 1 ) { 
+		HashTable_Set( pdic, hk, localehk )
+		localizedHotkeys .= " " . hk
+	} else {
+		if ( hk == "all" )
+			return localizedHotkeys
+		return HashTable_Get( pdic, hk )
+	}
+}
+
+getHotkeyStringInLocale( str )
+{
+	StringReplace, str, str, Return, Enter, 1
+	StringReplace, str, str, Escape, Esc, 1
+	StringReplace, str, str, BackSpace, BS, 1
+	StringReplace, str, str, Delete, Del, 1
+	StringReplace, str, str, Insert, Ins, 1
+	StringReplace, str, str, Control, Ctrl, 1
+	
+	str := RegExReplace( str, "(\w+)", "#[$1]" )
+	hotkeys := getHotkeyLocale( "all" ) 
+	Loop, Parse, hotkeys, %A_Space%
+	{
+		lhk := getHotkeyLocale( A_LoopField ) 
+		StringReplace, str, str, #[%A_LoopField%], %lhk%, 1
+	}
+	str := RegExReplace( str, "#\[(\w+)\]", "$1" )
+	return str
 }
 
 changeLayout( nextLayout )

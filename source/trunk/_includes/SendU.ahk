@@ -349,11 +349,9 @@ _SendU_GetMode( processName, mode = "", set = 0 )
 	static pdic := 0
 	if ( pdic == 0 ) {
 		pdic := HashTable_New()
-		HashTable_Set( pdic,  "totalcmd_exe", "c" )
-		HashTable_Set( pdic,  "skype_exe", "c" )
+		HashTable_Set( pdic,  "totalcmd.exe", "c" )
+		HashTable_Set( pdic,  "skype.exe", "c" )
 	}
-	StringReplace, processName, processName, . , _, 1
-	StringReplace, processName, processName, %A_Space% , _, 1
 	
 	if ( set == 1 )
 		HashTable_Set( pdic, processName, mode )
