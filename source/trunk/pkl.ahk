@@ -8,7 +8,7 @@
 #MaxHotkeysPerInterval 300
 #MaxThreads 20
 
-setPklInfo( "version", "0.3.a15" )
+setPklInfo( "version", "0.3.a16" )
 setPklInfo( "compiled", "Not published" )
 
 SendMode Event
@@ -83,6 +83,11 @@ pkl_init( layoutFromCommandLine = "" )
 
 	IniRead, t, pkl.ini, pkl, systemsdeadkeys, %A_Space%
 	setDeadKeysInCurrentLayout( t )
+	IniRead, t, pkl.ini, pkl, altGrEqualsAltCtrl, %A_Space%
+	if ( t == 1 )
+		setPklInfo( "altGrEqualsAltCtrl", 1 )
+	else 
+		setPklInfo( "altGrEqualsAltCtrl", 0 )
 
 	IniRead, t, pkl.ini, pkl, changeDynamicMode, 0
 	if ( t <> "" ) {
@@ -387,9 +392,9 @@ pkl_set_tray_menu()
 		; It is necessary to hook the tray icon for owner-drawing to work.
 		; (Owner-drawing is not used on Windows Vista.)
 		MI_SetMenuStyle( tr, 0x4000000 ) ; MNS_CHECKORBMP (optional)
-		OnMessage( 0x404, "AHK_NOTIFYICON" )
 		setPklInfo( "trayMenuHandler", tr )
 	}
+	OnMessage( 0x404, "AHK_NOTIFYICON" )
 }
 
 pkl_about()
@@ -461,12 +466,12 @@ keyPressed( HK )
 	}
 	extendKeyStroke = 0
 	if ( getLayoutInfo("hasAltGr") ) {
-		if ( getKeyState("RAlt") ) {  ; AltGr
+		if ( AltGrIsPressed() ) {
 			sh := getKeyState("Shift")
 			if ( (cap & 4) && getKeyState("CapsLock", "T") )
 				sh := 1 - sh
 			state := 6 + sh
-		} else { ; Not AltGr
+		} else {
 			if ( getKeyState("LAlt")) {
 				modif .= "!"
 				if ( getKeyState("RCtrl"))
@@ -579,7 +584,7 @@ extendKeyPressed( HK )
 		Send {LWin Up}
 		WinPressed := ""
 	}
-	if ( !altPressed && getKeyState( "RAlt", "P" ) ) {
+	if ( !AltPressed && getKeyState( "RAlt", "P" ) ) {
 		Send {LAlt Down}
 		altPressed = RAlt
 	}
@@ -981,7 +986,7 @@ pkl_displayHelpImage( activate = 0 )
 	} else {
 		state = 0
 		state += 1 * getKeyState( "Shift" )
-		state += 6 * ( hasAltGr * getKeyState( "RAlt" ) )
+		state += 6 * ( hasAltGr * AltGrIsPressed() )
 		fileName = state%state%
 	}
 	
@@ -1239,15 +1244,28 @@ changeLayout( nextLayout )
 		Run %A_AhkPath% /f %A_ScriptName% %nextLayout%
 }
 
-AHK_NOTIFYICON(wParam, lParam) ; HOOK for Windows XP
+AHK_NOTIFYICON(wParam, lParam)
 {
 	if ( lParam == 0x205 ) { ; WM_RBUTTONUP
+		if ( A_OSVersion != "WIN_XP" ) ; HOOK for Windows XP
+			return
 		; Show menu to allow owner-drawing.
 		MI_ShowMenu( getPklInfo( "trayMenuHandler" ) )
 		return 0 ; Withouth this double right click is without icons
 	} else if ( lParam ==0x201 ) { ; WM_LBUTTONDOWN
 		gosub ToggleSuspend
 	}
+}
+
+AltGrIsPressed()
+{
+	static altGrEqualsAltCtrl := -1
+	if ( altGrEqualsAltCtrl == -1 )
+		altGrEqualsAltCtrl := getPklInfo( "AltGrEqualsAltCtrl" )
+	if ( altGrEqualsAltCtrl )
+		return getKeyState( "Ctrl" ) * getKeyState( "Alt" )
+	else
+		return getKeyState( "RAlt" )
 }
 
 ; ##################################### labels #####################################
