@@ -8,7 +8,7 @@
 #MaxHotkeysPerInterval 300
 #MaxThreads 20
 
-setPklInfo( "version", "0.3.a16" )
+setPklInfo( "version", "0.3.a17" )
 setPklInfo( "compiled", "Not published" )
 
 SendMode Event
@@ -164,6 +164,10 @@ pkl_init( layoutFromCommandLine = "" )
 		key := subStr( A_LoopField, 1, pos-1 )
 		parts := subStr(A_LoopField, pos+1 )
 		StringSplit, parts, parts, %A_Tab%
+		if ( parts0 < 2 ) {
+			Hotkey, *%key%, doNothing
+			Continue
+		}
 		StringLower, parts2, parts2
 		if ( parts2 == "virtualkey" || parts2 == "vk")
 			parts2 = -1
@@ -1363,6 +1367,9 @@ return
 
 changeLayoutMenu:
 	changeLayout( getLayoutInfo( "layout" . A_ThisMenuItemPos . "code" ) )
+return
+
+doNothing:
 return
 
 ; ##################################### END #####################################
