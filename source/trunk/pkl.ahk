@@ -907,7 +907,7 @@ pkl_displayHelpImage( activate = 0 )
 	static guiActive := 0
 	static prevFile
 	static HelperImage
-	static displayOnTop := 1
+	static displayOnTop := 0
 	static yPosition := -1
 	static imgWidth
 	static imgHeight
