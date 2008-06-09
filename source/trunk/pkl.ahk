@@ -8,7 +8,7 @@
 #MaxHotkeysPerInterval 300
 #MaxThreads 20
 
-setPklInfo( "version", "0.3.a14" )
+setPklInfo( "version", "0.3.a15" )
 setPklInfo( "compiled", "Not published" )
 
 SendMode Event
@@ -23,9 +23,7 @@ CurrentBaseKey  = 0 ; Current base key :)
 
 t = %1% ; Layout from command line parameter
 pkl_init( t ) ; I would like use local variables
-
-Sleep, 100 ; I don't want kill myself...
-OnMessage(0x398, "MessageFromNewInstance")
+pkl_activate()
 
 return
 
@@ -171,7 +169,10 @@ pkl_init( layoutFromCommandLine = "" )
 		if ( parts2 == -2 ) {
 			Hotkey, *%key%, modifierDown
 			Hotkey, *%key% Up, modifierUp
-			setLayoutItem( key . "v", parts1 )
+			if ( getLayoutInfo( "hasAltGr" ) && parts1 == "RAlt" )
+				setLayoutItem( key . "v", "AltGr" )
+			else 
+				setLayoutItem( key . "v", parts1 )
 		} else if ( key == extendKey ) {
 			Hotkey, *%key% Up, upToDownKeyPress
 		} else {
@@ -267,9 +268,12 @@ pkl_init( layoutFromCommandLine = "" )
 		setTrayIconInfo( "FileOff", "off.ico" )
 		setTrayIconInfo( "NumOff", 1 )
 	}
+	pkl_set_tray_menu()
+}
 
 
-
+pkl_activate()
+{
 	SetTitleMatchMode 2
 	DetectHiddenWindows on
 	WinGet, id, list, %A_ScriptName%
@@ -279,12 +283,21 @@ pkl_init( layoutFromCommandLine = "" )
 		id := id%A_Index%
 		PostMessage, 0x398, 422,,, ahk_id %id%
 	}
-	Sleep, 20
+	Sleep, 10
+	pkl_show_tray_menu()
 
-	pkl_set_tray_menu()
 	IniRead, t, pkl.ini, pkl, displayHelpImage, 1
 	if ( t )
 		pkl_displayHelpImage( 1 )
+	
+	Sleep, 200 ; I don't want kill myself...
+	OnMessage(0x398, "MessageFromNewInstance")
+}
+
+pkl_show_tray_menu()
+{
+	Menu, tray, Icon, % getTrayIconInfo( "FileOn" ), % getTrayIconInfo( "NumOn" )
+	Menu, Tray, Icon,,, 1 ; Freeze the icon
 }
 
 pkl_set_tray_menu()
@@ -345,7 +358,7 @@ pkl_set_tray_menu()
 	Menu, tray, add, %helpimage%, displayHelpImageToggle
 	MI_SetMenuItemIcon(tr, ++iconNum, "SHELL32.dll", 116, 16)
 	Menu, tray, add, %deadk%, detectDeadKeysInCurrentLayout
-	MI_SetMenuItemIcon(tr, ++iconNum, "SHELL32.dll", 78, 16)
+	MI_SetMenuItemIcon(tr, ++iconNum, "SHELL32.dll", 25, 16)
 	if ( getLayoutInfo( "countOfLayouts" ) > 1 ) {
 		Menu, tray, add, 
 		++iconNum
@@ -369,8 +382,14 @@ pkl_set_tray_menu()
 		Menu, Tray, Click, 1 
 	}
 	
-	Menu, tray, Icon, % getTrayIconInfo( "FileOn" ), % getTrayIconInfo( "NumOn" )
-	Menu, Tray, Icon,,, 1 ; Freeze the icon
+	if (A_OSVersion == "WIN_XP")
+	{
+		; It is necessary to hook the tray icon for owner-drawing to work.
+		; (Owner-drawing is not used on Windows Vista.)
+		MI_SetMenuStyle( tr, 0x4000000 ) ; MNS_CHECKORBMP (optional)
+		OnMessage( 0x404, "AHK_NOTIFYICON" )
+		setPklInfo( "trayMenuHandler", tr )
+	}
 }
 
 pkl_about()
@@ -472,7 +491,9 @@ keyPressed( HK )
 
 
 	ch := getLayoutItem( HK . state )
-	if ( ch == 32 && HK == "SC039" ) {
+	if ( ch == "" ) {
+		return
+	} else if ( ch == 32 && HK == "SC039" ) {
 		Send, {Blind}{Space}
 	} else if ( ( ch + 0 ) > 0 ) {
 		pkl_Send( ch, modif )
@@ -495,9 +516,7 @@ keyPressed( HK )
 				if ( ch != "" )
 					ToSend = %modif%%ch%
 			}
-			if ( getGlobal("ModifierRAltIsDown") )
-				toSend = {RAlt Up}%toSend%{RAlt Down}
-			Send, %toSend%
+			pkl_SendThis( toSend )
 		}
 	} else if ( ch == "%" ) {
 		SendU_utf8_string( getLayoutItem( HK . state . "s" ) )
@@ -593,7 +612,7 @@ toggleCapsLock()
 {
 	if ( getKeyState("CapsLock", "T") )
 	{
-		SetCapsLockState, off
+		SetCapsLockState, Off
 	} else {
 		SetCapsLockState, on
 	}
@@ -720,10 +739,18 @@ pkl_Send( ch, modif = "" )
 		sendU(ch)
 		return
 	}
-	toSend = %modif%%char%
-	if ( getGlobal("ModifierRAltIsDown") )
-		toSend = {RAlt Up}%toSend%{RAlt Down}
-	Send %toSend%
+	pkl_SendThis( modif . char )
+}
+
+pkl_SendThis( toSend )
+{
+	if ( getAltGrState() ) {
+		setAltGrState( 0 )
+		Send, %toSend%
+		setAltGrState( 1 )
+	} else {
+		Send, %toSend%
+	}
 }
 
 pkl_CtrlState( HK, capState, ByRef state, ByRef modif )
@@ -928,7 +955,7 @@ pkl_displayHelpImage( activate = 0 )
 		setTimer, displayHelpImage, 200
 	} else if ( activate == -1 ) {
 		Menu, tray, UnCheck, % pkl_locale_string(15)
-		setTimer, displayHelpImage, off
+		setTimer, displayHelpImage, Off
 		Gui, 2:Destroy
 		return
 	}
@@ -1153,12 +1180,74 @@ getHotkeyStringInLocale( str )
 	return str
 }
 
+setAltGrState( isdown )
+{
+	getAltGrState( isdown, 1 )
+}
+
+getAltGrState( isdown = 0, set = 0 )
+{
+	static AltGr := 0
+	if ( set == 1 ) {
+		if ( isdown == 1 ) {
+			AltGr = 1
+			Send {LCtrl Down}{RAlt Down}
+		} else {
+			AltGr = 0
+			Send {RAlt Up}{LCtrl Up}
+		}
+	} else {
+		return AltGr
+	}
+}
+
+setModifierState( modifier, isdown )
+{
+	getModifierState( modifier, isdown, 1 )
+}
+
+getModifierState( modifier, isdown = 0, set = 0 )
+{
+	static pdic := 0
+	
+	if ( modifier == "AltGr" )
+		return getAltGrState( isdown, set )
+	
+	if ( pdic == 0 )
+	{
+		pdic := HashTable_New()
+	}
+	if ( set == 1 ) {
+		if ( isdown == 1 ) {
+			HashTable_Set( pdic, modifier, 1 )
+			Send {%modifier% Down}
+		} else {
+			HashTable_Set( pdic, modifier, 0 )
+			Send {%modifier% Up}
+		}
+	} else {
+		return HashTable_Get( pdic, modifier )
+	}
+}
+
 changeLayout( nextLayout )
 {
+	Suspend, On
 	if ( A_IsCompiled )
 		Run %A_ScriptName% /f %nextLayout%
 	else 
 		Run %A_AhkPath% /f %A_ScriptName% %nextLayout%
+}
+
+AHK_NOTIFYICON(wParam, lParam) ; HOOK for Windows XP
+{
+	if ( lParam == 0x205 ) { ; WM_RBUTTONUP
+		; Show menu to allow owner-drawing.
+		MI_ShowMenu( getPklInfo( "trayMenuHandler" ) )
+		return 0 ; Withouth this double right click is without icons
+	} else if ( lParam ==0x201 ) { ; WM_LBUTTONDOWN
+		gosub ToggleSuspend
+	}
 }
 
 ; ##################################### labels #####################################
@@ -1231,9 +1320,7 @@ return
 modifierDown:  ; *SC025
 	Critical
 	ThisHotkey := substr( A_ThisHotkey, 2 )
-	t := getLayoutItem( ThisHotkey . "v" )
-	modifier%t%IsDown = 1
-	Send {%t% Down}
+	setModifierState( getLayoutItem( ThisHotkey . "v" ), 1 )
 return
 
 modifierUp: ; *SC025 UP
@@ -1241,9 +1328,7 @@ modifierUp: ; *SC025 UP
 	ThisHotkey := A_ThisHotkey
 	ThisHotkey := substr( ThisHotkey, 2 )
 	ThisHotkey := substr( ThisHotkey, 1, -3 )
-	t := getLayoutItem( ThisHotkey . "v" )
-	modifier%t%IsDown = 0
-	Send {%t% Up}
+	setModifierState( getLayoutItem( ThisHotkey . "v" ), 0 )
 return
 
 displayHelpImage:
