@@ -6,17 +6,18 @@ use strict;
 use Config::IniHash;
 use ini2html::Button;
 use ini2html::ButtonPosition;
+use locale;
 
-my $INIFILE = 'layout.ini';
-my $HTMLFILE = 'layout.html';
+my $INIFILE = 'out/layout.ini';
+my $HTMLFILE = 'out/layout.html';
 my $TEMPLATE = '';
 
 ###############################################################################################
 {
 	my %shortNames = (
-		'backspace' => '<span class="special">'.chr(0x21dc).'</span>',
-		'lshift' => '<span class="special">'.chr(0x21d1).'</span>',
-		'capslock' => '<span class="special">'.chr(0x21c8).'</span>',
+		'backspace' => '<span class="special">'.chr(0x2190).'</span>',
+		'lshift' => '<span class="special">'.chr(0x21e7).'</span>',
+		'capslock' => '<span class="special">'.chr(0x21ea).'</span>',
 		'enter' => '<span class="special">'.chr(0x21b5).'</span>',
 		'lctrl' => 'LCt',
 		'lwin' => 'LW',
@@ -46,6 +47,7 @@ my $TEMPLATE = '';
 my $layout = ReadINI $INIFILE;
 
 my %LETTERS; # Letter => [ row, col ]
+my %SHIFTLETTERS; # Letter (with Shift) => [ row, col ]
 my %DEADKEYPOSITIONS; # deadkey number => [ row, col ]
 my $BUTTONS;
 $BUTTONS->[0]->[$_] = ini2html::Button->new('disabled') for(0..13);
@@ -105,7 +107,6 @@ while ( my ($sc, $def) = each(%{$layout->{layout}} ) )
 		$hasCapsState = 1;
 	}
 	my $button = ini2html::Button->new($type, $label, $vk, $caps);
-print $sc unless defined buttonPosition( $sc );
 	my ( $r, $c ) = @{buttonPosition( $sc )->[0]};
 	my $currmode = 0;
 	foreach ( @modes ) {
@@ -114,7 +115,7 @@ print $sc unless defined buttonPosition( $sc );
 			my $dk = substr $button->mode($SHIFTSTATES[ $currmode ])->label(), 2;
 			my $l = $layout->{"deadkey".$dk}->{0}."\n";
 			$l =~ s/\s+;.*//;
-			$button->mode($SHIFTSTATES[ $currmode ])->label(chr($l));
+			$button->mode($SHIFTSTATES[ $currmode ])->label(myChr($l));
 			$button->mode($SHIFTSTATES[ $currmode ])->type('deadkey');
 			$DEADKEYPOSITIONS{$dk} = [ $r, $c ];
 		}
@@ -123,9 +124,10 @@ print $sc unless defined buttonPosition( $sc );
 	if ( $button->mode(0) ) {
 		my $l = $button->mode(0)->label();
 		$LETTERS{$l} = [$r, $c] if length $l == 1;
-	} elsif ( $button->mode(1) ) {
+	}
+	if ( $button->mode(1) ) {
 		my $l = $button->mode(1)->label();
-		$LETTERS{$l} = [$r, $c] if length $l == 1;
+		$SHIFTLETTERS{$l} = [$r, $c] if length $l == 1;
 	}
 	my @bpos = @{buttonPosition( $sc )};
 	while (@bpos) {
@@ -190,15 +192,31 @@ if ( $layout->{global}->{extend_key} ) { # Extend mode
 			next unless defined $LETTERS{chr($base)};
 			$new =~ s/\t; [^\t]+$//;
 			my ($r, $c) = @{$LETTERS{chr($base)}};
-			$BUTTONS->[$r]->[$c]->newMode( 100+$deadkey, chr($new) );
+			$BUTTONS->[$r]->[$c]->newMode( 100+$deadkey, myChr($new) );
 		}
 		{ # Space and button of the current deadkey
 			my $new = $layout->{'deadkey'.$deadkey}->{0};
 			$new =~ s/\t; [^\t]+$//;
-			$BUTTONS->[4]->[3]->newMode( 100+$deadkey, chr($new) );
+			$BUTTONS->[4]->[3]->newMode( 100+$deadkey, myChr($new) );
 			$BUTTONS->[4]->[3]->mode( 100+$deadkey )->type('deadkey');
 			$BUTTONS->[4]->[6]->newMode( 100+$deadkey, $deadkey );
 			$BUTTONS->[4]->[6]->mode( 100+$deadkey )->type('special');
+		}
+		
+		push @SHIFTSTATES, 200+$deadkey;
+		while ( my ($base, $new) = each(%{$layout->{'deadkey'.$deadkey}} ) ) {
+			next unless defined $SHIFTLETTERS{chr($base)};
+			$new =~ s/\t; [^\t]+$//;
+			my ($r, $c) = @{$SHIFTLETTERS{chr($base)}};
+			$BUTTONS->[$r]->[$c]->newMode( 200+$deadkey, myChr($new) );
+		}
+		{ # Space and button of the current deadkey
+			my $new = $layout->{'deadkey'.$deadkey}->{0};
+			$new =~ s/\t; [^\t]+$//;
+			$BUTTONS->[4]->[3]->newMode( 200+$deadkey, myChr($new) );
+			$BUTTONS->[4]->[3]->mode( 200+$deadkey )->type('deadkey');
+			$BUTTONS->[4]->[6]->newMode( 200+$deadkey, $deadkey );
+			$BUTTONS->[4]->[6]->mode( 200+$deadkey )->type('special');
 		}
 		++$deadkey;
 	}
@@ -238,6 +256,8 @@ foreach ( @SHIFTSTATES ) {
 			}
 			if ( $state < 100 and ( $button->label() =~ /Shift/i && $state&1 or $button->label() =~ /RAlt/i && $state>=6 ) ) {
 				$classes .= ' pressed';
+			} elsif ( $state >= 200 and $button->label() =~ /Shift/i) {
+				$classes .= ' pressed';
 			} elsif ( $button->label() eq '' and defined $button->mode($state) and $button->mode($state)->type() eq 'deadkey' ) {
 				$classes .= ' deadkey';
 			} else {
@@ -273,3 +293,10 @@ s/#company#/$layout->{informations}->{company}/g;
 s/#modes#/$html/;
 print HTML $_;
 close HTML;
+
+
+
+sub myChr
+{
+	return Encode::encode("utf8", chr shift);
+}

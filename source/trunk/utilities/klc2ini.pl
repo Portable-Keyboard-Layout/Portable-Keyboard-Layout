@@ -6,7 +6,7 @@ use strict;
 
 my $KLCFILE = $ARGV[0];
 my $EXTEND_MODE = ( $ARGV[1] and $ARGV[1] eq 'vk' );
-my $INIFILE = 'layout.ini';
+my $INIFILE = 'out/layout.ini';
 
 my $LAYOUT  = '[layout]'."\n";
 my $LIGATURE = ''."\n";
@@ -15,6 +15,16 @@ my $GLOBAL = '[global]' . "\n";
 my %INFORMATIONS = ();
 
 ####### Read informations #######
+
+unless ( $KLCFILE ) {
+	foreach ( <*.klc> ) {
+		if ( $KLCFILE ) {
+			die 'Two .klc files!';
+		} else {
+			$KLCFILE = $_;
+		}
+	}
+}
 
 open KLC, '<:encoding(utf-16)', $KLCFILE  or die "Can't open $KLCFILE: $!";;
 my $ll = ''; # Last Line
@@ -59,8 +69,8 @@ my @SHIFTSTATES; # position => state
 
 ####### Read keymapper #######
 
-$GLOBAL .= 'shiftstates = '. $INFORMATIONS{shiftstates} . "\n";
 $GLOBAL .= '; extend_key = CapsLock' . "\n";
+$GLOBAL .= 'shiftstates = '. $INFORMATIONS{shiftstates} . "\n";
 $GLOBAL .= 'img_width = 296' . "\n";
 $GLOBAL .= 'img_height = 102' . "\n";
 
@@ -99,6 +109,7 @@ while (<KLC>) {
 	$LAYOUT .= "\n";
 }
 
+
 ####### Read dead keys #######
 
 $ll =~ /^DEADKEY\s+(....)/;
@@ -119,14 +130,14 @@ while (<KLC>) {
 		$DEADKEYS .= "\n\n";
 		$DEADKEYS .= '[deadkey'.$dkChr.']'."\n";
 		$DEADKEYS .= sprintf('%-4s','0').' = '.sprintf('%4u',(hex $dk));
-		$DEADKEYS .= "\t" . '; ' . (chr hex $dk)."\n";
+		$DEADKEYS .= "\t" . '; ' . myChr(hex $dk) ."\n";
 	}
 	s!\s*//.*$!!;
 	my @parts = split /\s+/;
 	next unless (@parts);
 	$DEADKEYS .= sprintf('%-4s',(hex $parts[0])).' = ';
 	$DEADKEYS .= sprintf('%4u',(hex $parts[1]));
-	$DEADKEYS .= "\t" . '; '.(chr hex $parts[0]).' -> '.(chr hex $parts[1])."\n";
+	$DEADKEYS .= "\t" . '; '.myChr(hex $parts[0]).' -> '.myChr(hex $parts[1])."\n";
 }
 close KLC;
 
@@ -199,12 +210,11 @@ sub mapkey
 	} else {
 		$un = hex substr($data,0,4);
 	}
-	#return $un;
 	return '*{Enter}' if $un == 13;
 	return '*{Tab}' if $un == 9;
 	return '={Space}' if $un == 32;
 	return 'dk'. DeadKeyNumber($un) if 5 == length($data);
-	return chr($un);
+	return myChr($un);
 }
 
 
@@ -268,4 +278,9 @@ sub shiftStateName
 	$res .= 'Sh' if $num & 1;
 	$res = 'Norm' unless $res;
 	return $res;
+}
+
+sub myChr
+{
+	return Encode::encode("utf8", chr shift);
 }

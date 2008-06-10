@@ -8,7 +8,7 @@
 #MaxHotkeysPerInterval 300
 #MaxThreads 20
 
-setPklInfo( "version", "0.3.a17" )
+setPklInfo( "version", "0.3.a18" )
 setPklInfo( "compiled", "Not published" )
 
 SendMode Event
@@ -276,6 +276,8 @@ pkl_init( layoutFromCommandLine = "" )
 	} else {
 		setTrayIconInfo( "FileOff", "off.ico" )
 		setTrayIconInfo( "NumOff", 1 )
+		setTrayIconInfo( "FileOff", "SHELL32.dll" ) ; For test only
+		setTrayIconInfo( "NumOff", 110 )            ; For test only
 	}
 	pkl_set_tray_menu()
 }
@@ -982,9 +984,14 @@ pkl_displayHelpImage( activate = 0 )
 		Gui, 2:Show, xCenter y%yPosition% AutoSize NA, pklHelperImage
 	}
 	
-	fileName = state0
 	if ( CurrentDeadKeys ) {
-		fileName = deadkey%CurrentDeadKeyNum%
+		if ( not getKeyState( "Shift" ) ) {
+			fileName = deadkey%CurrentDeadKeyNum%
+		} else {
+			fileName = deadkey%CurrentDeadKeyNum%sh
+			if ( not FileExist( layoutDir . "\" . filename . ".png" ) )
+				fileName = deadkey%CurrentDeadKeyNum%
+		}
 	} else if ( extendKey && getKeyState( extendKey, "P" ) ) {
 		fileName = extend
 	} else {
@@ -993,9 +1000,12 @@ pkl_displayHelpImage( activate = 0 )
 		state += 6 * ( hasAltGr * AltGrIsPressed() )
 		fileName = state%state%
 	}
+	if ( not FileExist( layoutDir . "\" . fileName . ".png" ) )
+		fileName = state0
 	
 	if ( prevFile == fileName )
 		return
+		
 	prevFile := fileName 
 	GuiControl,2:, HelperImage, *w%imgWidth% *h%imgHeight% %layoutDir%\%fileName%.png
 }
@@ -1220,7 +1230,7 @@ getModifierState( modifier, isdown = 0, set = 0 )
 	static pdic := 0
 	
 	if ( modifier == "AltGr" )
-		return getAltGrState( isdown, set )
+		return getAltGrState( isdown, set ) ; For better performance
 	
 	if ( pdic == 0 )
 	{
@@ -1266,10 +1276,7 @@ AltGrIsPressed()
 	static altGrEqualsAltCtrl := -1
 	if ( altGrEqualsAltCtrl == -1 )
 		altGrEqualsAltCtrl := getPklInfo( "AltGrEqualsAltCtrl" )
-	if ( altGrEqualsAltCtrl )
-		return getKeyState( "Ctrl" ) * getKeyState( "Alt" )
-	else
-		return getKeyState( "RAlt" )
+	return getKeyState( "RAlt" ) || ( altGrEqualsAltCtrl && getKeyState( "Ctrl" ) && getKeyState( "Alt" ) )
 }
 
 ; ##################################### labels #####################################
