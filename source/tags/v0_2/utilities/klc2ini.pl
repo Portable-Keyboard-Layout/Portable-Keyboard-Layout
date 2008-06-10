@@ -5,7 +5,7 @@ use warnings;
 use strict;
 
 my $KLCFILE = $ARGV[0];
-my $EXTEND_MODE = ( $ARGV[1] eq 'vk' );
+my $EXTEND_MODE = ( $ARGV[1] and $ARGV[1] eq 'vk' );
 my $INIFILE = 'layout.ini';
 
 my $LAYOUT  = '[layout]'."\n";
@@ -60,6 +60,10 @@ my @SHIFTSTATES; # position => state
 ####### Read keymapper #######
 
 $GLOBAL .= 'shiftstates = '. $INFORMATIONS{shiftstates} . "\n";
+$GLOBAL .= '; extend_key = CapsLock' . "\n";
+$GLOBAL .= 'img_width = 296' . "\n";
+$GLOBAL .= 'img_height = 102' . "\n";
+
 $LAYOUT .= ";scan = VK\tCapStat";
 foreach ( split /:/, $INFORMATIONS{shiftstates}) {
 	$LAYOUT .= "\t" . $_ . shiftStateName($_);
@@ -165,11 +169,20 @@ foreach
 print INI "\n\n";
 print INI $GLOBAL;
 print INI "\n\n";
-print INI $LAYOUT, "\n";
+print INI <<'EOF';
+[fingers]
+row1 = 1123445567888
+row2 = 1123445567888
+row3 = 1123445567888
+row4 = 11234455678
+
+EOF
+print INI $LAYOUT;
 print INI "\n\n";
 print INI $LIGATURE;
 print INI "\n\n";
-print INI $DEADKEYS, "\n";
+print INI $DEADKEYS;
+print INI "\n\n";
 close INI;
 
 ########################### Functions ###########################
@@ -187,8 +200,9 @@ sub mapkey
 		$un = hex substr($data,0,4);
 	}
 	#return $un;
-	return '*{tab}' if $un == 9;
-	return '={space}' if $un == 32;
+	return '*{Enter}' if $un == 13;
+	return '*{Tab}' if $un == 9;
+	return '={Space}' if $un == 32;
 	return 'dk'. DeadKeyNumber($un) if 5 == length($data);
 	return chr($un);
 }

@@ -5,8 +5,8 @@
 #SingleInstance force
 #MaxHotkeysPerInterval 300
 
-pkl_version = 0.1
-pkl_compiled = 2008.02.09.
+pkl_version = 0.2
+pkl_compiled = 2008.02.23.
 
 SendMode Event
 SetBatchLines, -1
@@ -336,12 +336,18 @@ keyPressed( HK )
 		ch := getGlobal( HK . state . "s" )
 		if ( ch == "{CapsLock}" ) {
 			toggleCapsLock()
-		} else if ( ch != "" )
-			Send, %modif%%ch%
-		else {
-			ch := getGlobal( HK . "0s" )
-			if ( ch != "" )
-				Send, %modif%%ch%
+		} else {
+			toSend = ;
+			if ( ch != "" ) {
+				toSend = %modif%%ch%
+			} else {
+				ch := getGlobal( HK . "0s" )
+				if ( ch != "" )
+					ToSend = %modif%%ch%
+			}
+			if ( getGlobal("ModifierRAltIsDown") )
+				toSend = {RAlt Up}%toSend%{RAlt Down}
+			Send, %toSend%
 		}
 	} else if ( ch == "%" ) {
 		SendU_utf8_string( getGlobal( HK . state . "s" ) )
@@ -378,6 +384,16 @@ extendKeyPressed( HK )
 		return
 	}
 	
+	
+	if ( SubStr( ch, 1, 1 ) == "!" ) {
+		ch := SubStr( ch, 2 )
+		SendInput, {RAW}%ch%
+		return
+	} else if ( SubStr( ch, 1, 1 ) == "*" ) {
+		ch := SubStr( ch, 2 )
+		SendInput, %ch%
+		return
+	}
 	if ( ShiftPressed && !getKeyState( ShiftPressed, "P" ) ) {
 		Send {RShift Up}
 		ShiftPressed := ""
@@ -409,18 +425,18 @@ extendKeyPressed( HK )
 		Loop 5  ; Scroll Speed
 			SendMessage, 0x114, 1, 0,  %control%, A ; 0x114 is WM_HSCROLL
 		return
-	}
-	
-	if ( ch == "Cut" ) {
-		ch = +{Del}
-	} else if ( ch == "Copy" ) {
-		ch = ^{Ins}
-	} else if ( ch == "Paste" ) {
-		ch = +{Ins}
 	} else {
-		ch = {Blind}{%ch%}
+		if ( ch == "Cut" ) {
+			ch = +{Del}
+		} else if ( ch == "Copy" ) {
+			ch = ^{Ins}
+		} else if ( ch == "Paste" ) {
+			ch = +{Ins}
+		} else {
+			ch = {Blind}{%ch%}
+		}
+		Send %ch%
 	}
-	Send %ch%
 }
 
 toggleCapsLock()
@@ -457,9 +473,11 @@ DeadKey(DK)
 {
 	global CurrentDeadKeys 
 	global CurrentBaseKey  
+	global CurrentDeadKeyNum
 	static PVDK := "" ; Pressed dead keys
 	DeadKeyChar := DeadKeyValue( DK, 0)
 
+	CurrentDeadKeyNum := DK
 	CurrentDeadKeys++
 	Input, nk, L1, {F1}{F2}{F3}{F4}{F5}{F6}{F7}{F8}{F9}{F10}{F11}{F12}{Left}{Right}{Up}{Down}{Home}{End}{PgUp}{PgDn}{Del}{Ins}{BS}
 	IfInString, ErrorLevel, EndKey
@@ -542,7 +560,7 @@ pkl_Send( ch, modif = "" )
 		return
 	}
 	toSend = %modif%%char%
-	if ( getKeyState("RAlt") )
+	if ( getGlobal("ModifierRAltIsDown") )
 		toSend = {RAlt Up}%toSend%{RAlt Down}
 	Send %toSend%
 }
@@ -674,12 +692,18 @@ pkl_MsgBox( msg, s = "", p = "", q = "", r = "" )
 pkl_displayHelpImage( activate = 0 )
 {
 	static guiActive := 0
-	static prevState := 999
+	static prevFile
 	static HelperImage
 	static displayOnTop := 1
 	static yPosition := -1
 	static layoutDir := "#"
 	static hasAltGr
+	static extendKey
+	static imgWidth
+	static imgHeight
+	global CurrentDeadKeys 
+	global CurrentDeadKeyNum
+
 	
 	if ( activate == 2 )
 		activate := 1 - 2 * guiActive
@@ -687,7 +711,10 @@ pkl_displayHelpImage( activate = 0 )
 		if ( layoutDir == "#" ) {
 			layoutDir := getGlobal("layoutDir")
 			hasAltGr := getGlobal("hasAltGr")
+			extendKey  := getGlobal("extendKey")
 			yPosition := A_ScreenHeight - 160
+			IniRead, imgWidth, %LayoutDir%\layout.ini, global, img_width, 291
+			IniRead, imgHeight, %LayoutDir%\layout.ini, global, img_height, 99
 		}
 		guiActive = 1
 		Gui, 2:+AlwaysOnTop -Border +ToolWindow
@@ -712,19 +739,26 @@ pkl_displayHelpImage( activate = 0 )
 		if ( displayOnTop )
 			yPosition := 5
 		else
-			yPosition := A_ScreenHeight - 160
+			yPosition := A_ScreenHeight - imgHeight - 60
 		Gui, 2:Show, xCenter y%yPosition% AutoSize NA, pklHelperImage
 	}
-
-	state = 0
-	state += getKeyState( "Shift" )
-	state += 6 * ( hasAltGr * getKeyState( "RAlt" ) )
-	if ( state == prevState )
+	
+	fileName = state0
+	if ( CurrentDeadKeys ) {
+		fileName = deadkey%CurrentDeadKeyNum%
+	} else if ( extendKey && getKeyState( extendKey, "P" ) ) {
+		fileName = extend
+	} else {
+		state = 0
+		state += 1 * getKeyState( "Shift" )
+		state += 6 * ( hasAltGr * getKeyState( "RAlt" ) )
+		fileName = state%state%
+	}
+	
+	if ( prevFile == fileName )
 		return
-	prevState := state
-	width = 291
-	height = 100
-	GuiControl,2:, HelperImage, *w%width% *h%height% %layoutDir%\state%state%.png
+	prevFile := fileName 
+	GuiControl,2:, HelperImage, *w%imgWidth% *h%imgHeight% %layoutDir%\%fileName%.png
 }
 
 
@@ -758,6 +792,7 @@ modifierDown:  ; *SC025
 	Critical
 	ThisHotkey := substr( A_ThisHotkey, 2 )
 	t = % %ThisHotkey%v
+	modifier%t%IsDown = 1
 	Send {%t% Down}
 return
 
@@ -767,6 +802,7 @@ modifierUp: ; *SC025 UP
 	ThisHotkey := substr( ThisHotkey, 2 )
 	ThisHotkey := substr( ThisHotkey, 1, -3 )
 	t = % %ThisHotkey%v
+	modifier%t%IsDown = 0
 	Send {%t% Up}
 return
 

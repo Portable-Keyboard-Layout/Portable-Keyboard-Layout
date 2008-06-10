@@ -1,4 +1,4 @@
-use encoding "utf8", STDOUT => "utf8";
+﻿use encoding "utf8", STDOUT => "utf8";
 use diagnostics;
 use utf8;
 use warnings;
@@ -12,6 +12,29 @@ my $HTMLFILE = 'layout.html';
 my $TEMPLATE = '';
 
 ###############################################################################################
+{
+	my %shortNames = (
+		'backspace' => '<span class="special">'.chr(0x21dc).'</span>',
+		'lshift' => '<span class="special">'.chr(0x21d1).'</span>',
+		'capslock' => '<span class="special">'.chr(0x21c8).'</span>',
+		'enter' => '<span class="special">'.chr(0x21b5).'</span>',
+		'lctrl' => 'LCt',
+		'lwin' => 'LW',
+		'lalt' => 'LAlt',
+		'altgr' => 'AGr',
+		'rctrl' => 'RCt',
+		'rwin' => 'RW',
+		'ralt' => 'RAlt',
+		'tab' => '<span class="special">'.chr(0x21b9).'</span>',
+		
+	);
+	sub shortLabel($)
+	{
+		my $v = shift;
+		return $shortNames{ lc $v } || $v;
+	}
+}
+###############################################################################################
 
 { # load template
 	open(TPL, '<utf8', 'ini2html/template.html');
@@ -22,17 +45,16 @@ my $TEMPLATE = '';
 
 my $layout = ReadINI $INIFILE;
 
+my %LETTERS; # Letter => [ row, col ]
+my %DEADKEYPOSITIONS; # deadkey number => [ row, col ]
 my $BUTTONS;
-my @ROWLENGTH = (13,13,12,12,7);
-$BUTTONS->[0]->[$_] = ini2html::Button->new('disabled') for(0..12);
-$BUTTONS->[0]->[13] = ini2html::Button->new('normal', 'BackSpace');
+$BUTTONS->[0]->[$_] = ini2html::Button->new('disabled') for(0..13);
 $BUTTONS->[1]->[$_] = ini2html::Button->new('disabled') for(1..13);
-$BUTTONS->[1]->[0] = ini2html::Button->new('normal', 'Tab');
-$BUTTONS->[2]->[$_] = ini2html::Button->new('disabled') for(1..11);
-$BUTTONS->[2]->[0] = ini2html::Button->new('normal', 'CapsLock');
-$BUTTONS->[2]->[12] = ini2html::Button->new('normal', 'Enter');
-$BUTTONS->[3]->[0] = ini2html::Button->new('modifier', 'LShift');
+$BUTTONS->[2]->[$_] = ini2html::Button->new('disabled') for(1..12);
 $BUTTONS->[3]->[$_] = ini2html::Button->new('disabled') for(1..11);
+$BUTTONS->[1]->[0] = ini2html::Button->new('normal', 'Tab');
+$BUTTONS->[2]->[0] = ini2html::Button->new('normal', 'Capslock');
+$BUTTONS->[3]->[0] = ini2html::Button->new('modifier', 'LShift');
 $BUTTONS->[3]->[12] = ini2html::Button->new('modifier', 'RShift');
 $BUTTONS->[4]->[0] = ini2html::Button->new('modifier', 'LCtrl');
 $BUTTONS->[4]->[1] = ini2html::Button->new('modifier', 'LWin');
@@ -43,8 +65,25 @@ $BUTTONS->[4]->[5] = ini2html::Button->new('modifier', 'RWin');
 $BUTTONS->[4]->[6] = ini2html::Button->new('normal', 'Menu');
 $BUTTONS->[4]->[7] = ini2html::Button->new('modifier', 'RCtrl');
 
+my $enterMode = $layout->{fingers}->{enter_mode} || 1;
+if ( !defined $enterMode or $enterMode== 1 ) {
+	$BUTTONS->[0]->[13] = ini2html::Button->new('normal', 'Backspace');
+	$BUTTONS->[2]->[12] = ini2html::Button->new('normal', 'Enter');
+} elsif ( $enterMode== 0 ) {
+	$BUTTONS->[0]->[14] = ini2html::Button->new('normal', 'Backspace');
+	$BUTTONS->[1]->[13] = ini2html::Button->new('normal', 'Enter');
+	$BUTTONS->[2]->[12] = ini2html::Button->new('normal', 'Enter');
+} elsif ( $enterMode== 2 ) {
+	$BUTTONS->[0]->[13] = ini2html::Button->new('normal', 'Backspace');
+	$BUTTONS->[1]->[13] = ini2html::Button->new('normal', 'Enter');
+	$BUTTONS->[2]->[13] = ini2html::Button->new('normal', 'Enter');
+}
+buttonPositionEnterMode($enterMode);
+
 my @SHIFTSTATES = split /:/, ($layout->{global}->{shiftstates}.':8:9');
 my $hasCapsState = 0;
+my $hasAltGr     = 0;
+foreach ( @SHIFTSTATES ) {$hasAltGr = 1 if $_&6 == 6;}
 while ( my ($sc, $def) = each(%{$layout->{layout}} ) )
 {
 	$def =~ s/\t; [^\t]+$//;
@@ -66,7 +105,8 @@ while ( my ($sc, $def) = each(%{$layout->{layout}} ) )
 		$hasCapsState = 1;
 	}
 	my $button = ini2html::Button->new($type, $label, $vk, $caps);
-
+print $sc unless defined buttonPosition( $sc );
+	my ( $r, $c ) = @{buttonPosition( $sc )->[0]};
 	my $currmode = 0;
 	foreach ( @modes ) {
 		$button->newMode( $SHIFTSTATES[ $currmode ], $_ );
@@ -76,22 +116,34 @@ while ( my ($sc, $def) = each(%{$layout->{layout}} ) )
 			$l =~ s/\s+;.*//;
 			$button->mode($SHIFTSTATES[ $currmode ])->label(chr($l));
 			$button->mode($SHIFTSTATES[ $currmode ])->type('deadkey');
+			$DEADKEYPOSITIONS{$dk} = [ $r, $c ];
 		}
 		$currmode++;
 	}
-	my ( $r, $c ) = buttonPosition( $sc );
-	$BUTTONS->[$r]->[$c] = $button;
+	if ( $button->mode(0) ) {
+		my $l = $button->mode(0)->label();
+		$LETTERS{$l} = [$r, $c] if length $l == 1;
+	} elsif ( $button->mode(1) ) {
+		my $l = $button->mode(1)->label();
+		$LETTERS{$l} = [$r, $c] if length $l == 1;
+	}
+	my @bpos = @{buttonPosition( $sc )};
+	while (@bpos) {
+		my ( $r, $c ) = @{(shift @bpos)};
+		$BUTTONS->[$r]->[$c] = $button;
+	}
+}
+if ( 1 || !$hasCapsState ) {
+	pop @SHIFTSTATES;
+	pop @SHIFTSTATES;
 }
 
 { # Fingers
-	my ($r,$c);
-	for $r (0..3) {
+	for my $r (0..3) {
 		my @fingers = split //, (($layout->{fingers}->{'row'.($r+1)} or '') . '8888888888888888');
 		my $modif = ($r==3?-1:0);
-		$c = 0;
-		foreach (0..$ROWLENGTH[$r]) {
-			$BUTTONS->[$r]->[$c]->finger($fingers[$c+$modif]);
-			$c++;
+		foreach (0..@{$BUTTONS->[$r]}-1) {
+			$BUTTONS->[$r]->[$_]->finger($fingers[$_+$modif]);
 		}
 	}
 	$BUTTONS->[3]->[0]->finger(1);
@@ -105,21 +157,63 @@ while ( my ($sc, $def) = each(%{$layout->{layout}} ) )
 	$BUTTONS->[4]->[7]->finger(8);
 }
 
+if ( $layout->{global}->{extend_key} ) { # Extend mode
+	my %extendKeys;
+	if ( $layout->{extend} ) {
+		%extendKeys = %{$layout->{extend}};
+	} elsif ( -e 'pkl.ini' ) {
+		my $pkl = ReadINI 'pkl.ini';
+		%extendKeys = %{$pkl->{extend}};
+	} elsif ( -e '../pkl.ini' ) {
+		my $pkl = ReadINI '../pkl.ini';
+		%extendKeys = %{$pkl->{extend}};
+	}
+	
+	push @SHIFTSTATES, 100;
+	while ( my ($sc, $def) = each(%extendKeys) )
+	{
+		$def =~ s/\t; [^\t]+$//;
+		my @bpos = @{buttonPosition( $sc )};
+		while (@bpos) {
+			my ( $r, $c ) = @{(shift @bpos)};
+			$BUTTONS->[$r]->[$c]->newMode( 100, '*{'.$def.'}' );
+		}
+	}
+	$BUTTONS->[4]->[3]->newMode( 100, 'EXTEND MODE' );
+}
+
+{ # Dead keys
+	my $deadkey = 1;
+	while ( $layout->{'deadkey'.$deadkey} ) {
+		push @SHIFTSTATES, 100+$deadkey;
+		while ( my ($base, $new) = each(%{$layout->{'deadkey'.$deadkey}} ) ) {
+			next unless defined $LETTERS{chr($base)};
+			$new =~ s/\t; [^\t]+$//;
+			my ($r, $c) = @{$LETTERS{chr($base)}};
+			$BUTTONS->[$r]->[$c]->newMode( 100+$deadkey, chr($new) );
+		}
+		{ # Space and button of the current deadkey
+			my $new = $layout->{'deadkey'.$deadkey}->{0};
+			$new =~ s/\t; [^\t]+$//;
+			$BUTTONS->[4]->[3]->newMode( 100+$deadkey, chr($new) );
+			$BUTTONS->[4]->[3]->mode( 100+$deadkey )->type('deadkey');
+			$BUTTONS->[4]->[6]->newMode( 100+$deadkey, $deadkey );
+			$BUTTONS->[4]->[6]->mode( 100+$deadkey )->type('special');
+		}
+		++$deadkey;
+	}
+}
 
 my $html = '';
-my @states = @SHIFTSTATES;
-if ( 1 || !$hasCapsState ) {
-	pop @states;
-	pop @states;
-}
-foreach ( @states ) {
+$html .= '<div id="layouts">'."\n";
+foreach ( @SHIFTSTATES ) {
 	next if $_ == 2;
+	next if ($_ < 100 && ($_&8) == 8 && !$hasCapsState);
+	$html .= '<div class="layout">'."\n";
 	my $state = $_;
-	$html .= "\n".'<div>';
-	$html .= '<div style="float: left; clear: left;">&nbsp;</div>'."\n";
 	for my $r ( 0 .. 4) {
-		$html .= '<div style="float: left; clear: left;">&nbsp;</div>'."\n";
-		for my $c ( 0 .. $ROWLENGTH[$r] ) {
+		$html .= '<table class="onerow"><tr>'."\n";
+		for my $c ( 0 .. @{$BUTTONS->[$r]}-1 ) {
 			my $button = $BUTTONS->[$r]->[$c];
 			$html .= "\n";
 			my $label = '';
@@ -127,41 +221,46 @@ foreach ( @states ) {
 			my $style = '';
 			
 			if ( $button->type() eq 'disabled' ) {
-				$label = '&nbsp;';
+				$label = ' ';
 			} elsif ( $button->label() ne '' ) {
 				$label = $button->label();
-			} else {
+				$label = 'AltGr' if $hasAltGr && lc $label eq 'ralt';
+			} elsif ( $button->mode($state) ) {
 				$label = $button->mode($state)->label();
+			} else {
+				$label = '';
 			}
-			$label =~ s/&/&amp;/g;
-			$label =~ s/</&lt;/g;
-			$label =~ s/>/&gt;/g;
 			
 			if ( $button->type() eq 'modifier' ) {
 				$classes .= ' modifier';
-			} elsif ( $button->label() ne '' or $button->mode($state)->type() eq 'special' ) {
+			} elsif ( $button->label() ne '' or $button->mode($state) && $button->mode($state)->type() eq 'special' ) {
 				$classes .= ' special';
 			}
-			if ( $button->label() eq '' and $button->mode($state)->type() eq 'deadkey' ) {
+			if ( $state < 100 and ( $button->label() =~ /Shift/i && $state&1 or $button->label() =~ /RAlt/i && $state>=6 ) ) {
+				$classes .= ' pressed';
+			} elsif ( $button->label() eq '' and defined $button->mode($state) and $button->mode($state)->type() eq 'deadkey' ) {
 				$classes .= ' deadkey';
 			} else {
 				$classes .= ' finger' . $button->finger();
 			}
 			
-			$style .= 'width: 2em;' if ( $r == 0 && $c == 13 );
-			$style .= 'width: 1.5em;' if ( $r == 1 && $c == 0 );
-			$style .= 'width: 1.5em;' if ( $r == 1 && $c == 13 );
-			$style .= 'width: 1.9em;' if ( $r == 2 && $c == 0 );
-			$style .= 'width: 2.35em;' if ( $r == 2 && $c == 12 );
-			$style .= 'width: 1.25em;' if ( $r == 3 && $c == 0 );
-			$style .= 'width: 3em;' if ( $r == 3 && $c == 12 );
-			$style .= 'width: 1.25em;' if ( $r == 4 && $c != 3 );
-			$style .= 'width: 7.6em;' if ( $r == 4 && $c == 3 );
-			$html .= '<div class="button '.$classes.'" style="'.$style.'" title="'.$label.'"><div>'.$label.'</div></div>';
+			$label =~ s/&/&amp;/g;
+			$label =~ s/</&lt;/g;
+			$label =~ s/>/&gt;/g;
+			
+			{
+				my $w = buttonWidth( $r, $c );
+				$style .= 'width: '. $w . 'em;' if ( $w != 1 );
+			}
+			
+			$html .= '<td class="button '.$classes.'" style="'.$style.'" title="'.$label.'"><div>'.shortLabel($label).'</div></td>';
 		}
+		$html .= "\n".'</tr></table>'."\n";
 	}
 	$html .= '</div>'."\n";
 }
+$html .= '<p>© <a href="http://pkl.sourceforge.net/">pkl.sourceforge.net</a></p>'."\n";
+$html .= '</div>';
 
 open(HTML, '>:utf8', $HTMLFILE);
 binmode HTML, ':utf8';

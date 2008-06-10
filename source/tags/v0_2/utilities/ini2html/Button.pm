@@ -99,12 +99,31 @@ sub new($;$$)
 	$self;
 }
 
+
+{
+	my %shortNames = (
+		left => chr(0x2190),
+		up   => chr(0x2191),
+		right=> chr(0x2192),
+		down => chr(0x2193),
+	);
+	my %longNames = (
+		'^x' => 'Cut',
+		'^c' => 'Copy',
+		'^v' => 'Paste',
+		'^s' => 'Save',
+		'{wheelleft}' => chr(0x2190),
+		'{wheelup}'   => chr(0x2191),
+		'{wheelright}'=> chr(0x2192),
+		'{wheeldown}' => chr(0x2193),
+	);
+
 sub newMode( $$ )
 {
 	my $class = shift;
 	my $str = shift;
 	my $type;
-	my $label;
+	my $label = '';
 	
 	if ( length($str) == 1 ) {
 		$type = 'normal';
@@ -120,16 +139,36 @@ sub newMode( $$ )
 		if ( substr( $str, 0, 1 ) eq '=' || substr( $str, 0, 1 ) eq '*' ) {
 			$type = 'special';
 			$label = $str = substr( $str, 1 );
+			if ( $longNames{ lc $str } ) {
+				$label = $longNames{ lc $str };
+				$str = '';
+			}
 		}
-		if ( substr( $str, 0, 1 ) eq '{' and substr( $str, -1 ) eq '}' and substr( $str, 1, -1 ) !~ /[{}]/ ) {
-			$type = 'special';
-			$label = substr( $str, 1, -1 );
+		if ( $str eq '' ) {
+			# nothing.
+		} elsif ( substr( $str, 0, 1 ) eq '{' and substr( $str, -1 ) eq '}' and substr( $str, 1, -1 ) !~ /[{}]/ ) {
+			my $n = lc substr( $str, 1, -1 );
+			if ( defined $shortNames{$n} ) {
+				$label = $shortNames{$n};
+				$type = 'normal';
+			} else {
+				$label = ucfirst $n;
+				$type = 'special';
+			}
+		} elsif ( $str !~ /[^{][!^+#]/ and $str !~ /[!^+#][^}]/ ) {
+			$label = $str;
+			$label =~ s/{\+}/+/g;
+			$label =~ s/{^}/^/g;
+			$label =~ s/{#}/#/g;
+			$label =~ s/{!}/!/g;
+			$type = 'normal';
 		} else {
 			$label = $str;
 		}
 	}
 	return $class->new( $type, $label );
 }
+} # sub newMode + %shortNames
 
 sub type( $;$ )
 {

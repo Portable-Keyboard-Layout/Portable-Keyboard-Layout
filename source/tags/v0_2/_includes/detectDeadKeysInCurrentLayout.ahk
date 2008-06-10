@@ -6,7 +6,7 @@ http://www.autohotkey.com
 
 ------------------------------------------------------------------------
 
-Version: 0.0.1 2007-12-10 first release
+Version: 0.0.2 2008-01-24
 License: GNU General Public License
 Author: FARKAS Máté <http://fmate14.try.hu> (My given name is Máté)
 
