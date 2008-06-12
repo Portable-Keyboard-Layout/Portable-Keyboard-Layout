@@ -8,7 +8,7 @@
 #MaxHotkeysPerInterval 300
 #MaxThreads 20
 
-setPklInfo( "version", "0.3.a18" )
+setPklInfo( "version", "0.3.a19" )
 setPklInfo( "compiled", "Not published" )
 
 SendMode Event
@@ -78,6 +78,16 @@ pkl_init( layoutFromCommandLine = "" )
 			Hotkey, %A_LoopField%, changeTheActiveLayout
 			if ( A_Index == 1 )
 				setPklInfo( "ChangeLayoutHotkey", A_LoopField )
+		}
+	}
+
+	IniRead, t, pkl.ini, pkl, displayHelpImageHotkey, %A_Space%
+	if ( t <> "" ) {
+		Loop, parse, t, `,
+		{
+			Hotkey, %A_LoopField%, displayHelpImageToggle
+			if ( A_Index == 1 )
+				setPklInfo( "DisplayHelpImageHotkey", A_LoopField )
 		}
 	}
 
@@ -276,8 +286,6 @@ pkl_init( layoutFromCommandLine = "" )
 	} else {
 		setTrayIconInfo( "FileOff", "off.ico" )
 		setTrayIconInfo( "NumOff", 1 )
-		setTrayIconInfo( "FileOff", "SHELL32.dll" ) ; For test only
-		setTrayIconInfo( "NumOff", 110 )            ; For test only
 	}
 	pkl_set_tray_menu()
 }
@@ -315,6 +323,7 @@ pkl_set_tray_menu()
 {
 	ChangeLayoutHotkey := getHotkeyStringInLocale( getPklInfo( "ChangeLayoutHotkey" ) )
 	SuspendHotkey := getHotkeyStringInLocale( getPklInfo( "SuspendHotkey" ) )
+	HelpImageHotkey := getHotkeyStringInLocale( getPklInfo( "DisplayHelpImageHotkey" ) )
 	
 	Layout := getLayoutInfo( "active" )
 	
@@ -323,6 +332,9 @@ pkl_set_tray_menu()
 	exit := pkl_locale_string(11)
 	deadk := pkl_locale_string(12)
 	helpimage := pkl_locale_string(15)
+	if ( HelpImageHotkey != "" )
+		helpImage .= " (" . AddAtForMenu(HelpImageHotkey) . ")"
+	setPklInfo( "DisplayHelpImageMenuName", helpImage )
 	changeLayout := pkl_locale_string(18)
 	if ( ChangeLayoutHotkey != "" )
 		changeLayout .= " (" . AddAtForMenu(ChangeLayoutHotkey) . ")"
@@ -952,7 +964,7 @@ pkl_displayHelpImage( activate = 0 )
 	}
 		
 	if ( activate == 1 ) {
-		Menu, tray, Check, % pkl_locale_string(15)
+		Menu, tray, Check, % getPklInfo( "DisplayHelpImageMenuName" )
 		if ( yPosition == -1 ) {
 			yPosition := A_ScreenHeight - 160
 			IniRead, imgWidth, %LayoutDir%\layout.ini, global, img_width, 300
@@ -965,7 +977,7 @@ pkl_displayHelpImage( activate = 0 )
 		Gui, 2:Show, xCenter y%yPosition% AutoSize NA, pklHelperImage
 		setTimer, displayHelpImage, 200
 	} else if ( activate == -1 ) {
-		Menu, tray, UnCheck, % pkl_locale_string(15)
+		Menu, tray, UnCheck, % getPklInfo( "DisplayHelpImageMenuName" )
 		setTimer, displayHelpImage, Off
 		Gui, 2:Destroy
 		return
@@ -1188,6 +1200,11 @@ getHotkeyStringInLocale( str )
 	StringReplace, str, str, Insert, Ins, 1
 	StringReplace, str, str, Control, Ctrl, 1
 	
+	StringReplace, str, str, +, Shift &%A_Space%, 1
+	StringReplace, str, str, ^, Ctrl &%A_Space%, 1
+	StringReplace, str, str, !, Alt &%A_Space%, 1
+	StringReplace, str, str, #, Win &%A_Space%, 1
+
 	str := RegExReplace( str, "(\w+)", "#[$1]" )
 	hotkeys := getHotkeyLocale( "all" ) 
 	Loop, Parse, hotkeys, %A_Space%
