@@ -30,8 +30,6 @@ So... If I would like send ~, I must send ~{Space}. This script detect these cha
 
 detectDeadKeysInCurrentLayout()
 {
-	global DeadKeysInCurrentLayout
-	possibleDeadKeys = ~ ^ ` *
 	DeadKeysInCurrentLayout = ;
 	
 	notepadMode = 0
@@ -46,23 +44,55 @@ detectDeadKeysInCurrentLayout()
 		Run Notepad
 		Sleep 2000
 		e := _detectDeadKeysInCurrentLayout_GetLocale( "EDITOR" )
-		SendInput {RAW}%e%
+		SendInput {Raw}%e%
+		Send {Enter}
 	} else {
 		Send `n{Space}+{Home}{Del}
 	}
 	
-	loop, parse, possibleDeadKeys, %A_Space%
+	ord = 33
+	Loop
 	{
 		clipboard = ;
-		Send {%A_LoopField%}{space}+{Left}^x
+		ch := chr( ord )
+		Send {%ch%}{space}+{Left}^x
 		ClipWait
 		ifNotEqual clipboard, %A_Space%
-			DeadKeysInCurrentLayout = %DeadKeysInCurrentLayout%%A_LoopField%
+			DeadKeysInCurrentLayout = %DeadKeysInCurrentLayout%%ch%
+		++ord
+		if ( ord == 0x30 ) ; 0-9
+			ord := 0x3A
+		else if ( ord == 0x41 ) ; A-Z
+			ord := 0x5B
+		else if ( ord == 0x61 ) ; a-z
+			ord := 0x7B
+		else if ( ord >= 0x80 )
+			break
 	}
 	Send {Ctrl Up}{Shift Up}
-	Send +{Home}{Del}{Backspace}
-	if ( notepadMode )
+	Send +{Home}{Del}
+  	dk := _detectDeadKeysInCurrentLayout_GetLocale("DEADKEYS")
+	Send {Raw}%dk%:%A_Space%
+	
+	loop, parse, DeadKeysInCurrentLayout
+	{
+		Send {%A_LoopField%}{space}
+	}
+	Send {Enter}
+	
+	lc := _detectDeadKeysInCurrentLayout_GetLocale("LAYOUT_CODE") 
+	Send {Raw}%lc%:%A_Space%
+	WinGet, WinID,, A
+	ThreadID := DllCall("GetWindowThreadProcessId", "Int", WinID, "Int", 0)
+	Layout := DllCall("GetKeyboardLayout", "Int", ThreadID) 
+	Layout := ( Layout & 0xFFFF0000 )>>16
+	Send %Layout%
+	Send {Enter}
+	
+	If ( notepadMode )
 		Send !{F4}
+	
+	return DeadKeysInCurrentLayout
 }
 
 detectDeadKeysInCurrentLayout_SetLocale( variable, value )
@@ -75,6 +105,8 @@ _detectDeadKeysInCurrentLayout_GetLocale( variable, value = "", set = 0 )
 	static lMSGBOX_TITLE := "Open Notepad?"
 	static lMSGBOX := "To detect the deadkeys in your current keyboard layout,`nI need an editor.`n`nClick Yes to open the Notepad`nClick No if you already in an editor`nClick Cancel if you KNOW, your system doesn't have dead keys"
 	static lEDITOR := "Detecting deadkeys... Do not interrupt!"
+	static lDEADKEYS := "ASCII deadkeys"
+	static lLAYOUT_CODE := "Layout code"
 	
 	if ( set == 1 )
 		l%variable% := value

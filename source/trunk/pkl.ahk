@@ -8,7 +8,7 @@
 #MaxHotkeysPerInterval 300
 #MaxThreads 20
 
-setPklInfo( "version", "0.3.a19" )
+setPklInfo( "version", "0.3.a20" )
 setPklInfo( "compiled", "Not published" )
 
 SendMode Event
@@ -1268,11 +1268,17 @@ getModifierState( modifier, isdown = 0, set = 0 )
 
 changeLayout( nextLayout )
 {
+	Menu, Tray, Icon,,, 1 ; Freeze the icon
+	wasSuspend := A_IsSuspended
 	Suspend, On
+	
 	if ( A_IsCompiled )
 		Run %A_ScriptName% /f %nextLayout%
 	else 
 		Run %A_AhkPath% /f %A_ScriptName% %nextLayout%
+	
+	if ( !wasSuspend )
+		Suspend, Off
 }
 
 AHK_NOTIFYICON(wParam, lParam)
