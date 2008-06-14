@@ -8,7 +8,7 @@
 #MaxHotkeysPerInterval 300
 #MaxThreads 20
 
-setPklInfo( "version", "0.3.a20" )
+setPklInfo( "version", "0.3.a21" )
 setPklInfo( "compiled", "Not published" )
 
 SendMode Event
@@ -397,12 +397,11 @@ pkl_set_tray_menu()
 	Menu, tray, add, %exit%, exitApp
 	MI_SetMenuItemIcon(tr, ++iconNum, "SHELL32.dll", 28, 16)
 
+	Menu, Tray, Click, 2
 	if ( getLayoutInfo( "countOfLayouts" ) > 1 ) {
 		Menu, tray, Default , %changeLayout%
-		Menu, Tray, Click, 2
 	} else {
 		Menu, tray, Default , %susp%
-		Menu, Tray, Click, 1 
 	}
 	
 	if (A_OSVersion == "WIN_XP")
@@ -1269,16 +1268,12 @@ getModifierState( modifier, isdown = 0, set = 0 )
 changeLayout( nextLayout )
 {
 	Menu, Tray, Icon,,, 1 ; Freeze the icon
-	wasSuspend := A_IsSuspended
 	Suspend, On
 	
 	if ( A_IsCompiled )
 		Run %A_ScriptName% /f %nextLayout%
 	else 
 		Run %A_AhkPath% /f %A_ScriptName% %nextLayout%
-	
-	if ( !wasSuspend )
-		Suspend, Off
 }
 
 AHK_NOTIFYICON(wParam, lParam)
