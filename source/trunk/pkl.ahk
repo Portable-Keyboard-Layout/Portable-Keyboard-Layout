@@ -8,7 +8,7 @@
 #MaxHotkeysPerInterval 300
 #MaxThreads 20
 
-setPklInfo( "version", "0.3.a21" )
+setPklInfo( "version", "0.3.a22" )
 setPklInfo( "compiled", "Not published" )
 
 SendMode Event
@@ -515,6 +515,8 @@ keyPressed( HK )
 	ch := getLayoutItem( HK . state )
 	if ( ch == "" ) {
 		return
+	} else if ( state == "v" ) { ; VirtualKey
+		pkl_SendThis( modif . "{VK" . ch . "}" )
 	} else if ( ch == 32 && HK == "SC039" ) {
 		Send, {Blind}{Space}
 	} else if ( ( ch + 0 ) > 0 ) {
@@ -777,7 +779,7 @@ pkl_SendThis( toSend )
 
 pkl_CtrlState( HK, capState, ByRef state, ByRef modif )
 {
-	if ( getKeyState("Ctrl")) {
+	if ( getKeyState("Ctrl") ) {
 		state = 2
 		if ( getKeyState("Shift") ) {
 			state++
@@ -785,12 +787,12 @@ pkl_CtrlState( HK, capState, ByRef state, ByRef modif )
 				state--
 				modif .= "+"
 				if ( !getLayoutItem( HK . state ) ) {
-					state = 0
+					state := "v" ; VirtualKey
 					modif .= "^"
 				}
 			}
 		} else if ( !getLayoutItem( HK . state ) ) {
-			state = 0
+			state := "v" ; VirtualKey
 			modif .= "^"
 		}
 	} else {
