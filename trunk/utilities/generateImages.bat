@@ -12,6 +12,7 @@ del *.png
 "C:\Program Files\Mozilla Firefox\firefox.exe" -p screengrab -no-remote -savepng out/layout.html
 
 perl split_png.pl
+del *.png
 
 del ..\layouts\%1\layout.html
 del ..\layouts\%1\*.png
