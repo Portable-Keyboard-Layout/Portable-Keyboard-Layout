@@ -202,18 +202,23 @@ sub mapkey
 {
 	my $data = shift;
 	my $un; # Unicode number
+	my $isDeadkey = 0;
 	
 	return '--' if $data eq '-1';
 	return '%%' if $data eq '%%';
+	if ( substr($data, -1) eq '@' ) {
+		$data = substr($data, 0, -1);
+		$isDeadkey = 1
+	}
 	if ( 1 == length($data) ) {
 		$un = ord $data;
 	} else {
 		$un = hex substr($data,0,4);
 	}
+	return 'dk'. DeadKeyNumber($un) if $isDeadkey;
 	return '*{Enter}' if $un == 13;
 	return '*{Tab}' if $un == 9;
 	return '={Space}' if $un == 32;
-	return 'dk'. DeadKeyNumber($un) if 5 == length($data);
 	return myChr($un);
 }
 

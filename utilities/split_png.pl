@@ -19,7 +19,7 @@ my $dist = 14;
 # And these, too
 my @states = split /:/, $layout->{global}->{shiftstates};
 my $isExtendMode = (( $layout->{global}->{extend_key} ) ? 1 : 0 );
-my $deadkeys = 19; # it is too much, but easier to delete, than count every time...
+my $deadkeys = 35; # it is too much, but easier to delete, than count every time... (But greek polytonic has 34 deadkeys...)
 
 
 my @filenames;
