@@ -55,29 +55,19 @@ detectDeadKeysInCurrentLayout()
 	{
 		clipboard = ;
 		ch := chr( ord )
-		Send {%ch%}{space}+{Left}^x
+		Send {%ch%}{space}+{Left}^{Ins}
 		ClipWait
 		ifNotEqual clipboard, %A_Space%
 			DeadKeysInCurrentLayout = %DeadKeysInCurrentLayout%%ch%
 		++ord
-		if ( ord == 0x30 ) ; 0-9
-			ord := 0x3A
-		else if ( ord == 0x41 ) ; A-Z
-			ord := 0x5B
-		else if ( ord == 0x61 ) ; a-z
-			ord := 0x7B
-		else if ( ord >= 0x80 )
+		if ( ord >= 0x80 )
 			break
 	}
 	Send {Ctrl Up}{Shift Up}
 	Send +{Home}{Del}
-  	dk := _detectDeadKeysInCurrentLayout_GetLocale("DEADKEYS")
-	Send {Raw}%dk%:%A_Space%
-	
-	loop, parse, DeadKeysInCurrentLayout
-	{
-		Send {%A_LoopField%}{space}
-	}
+	dk := _detectDeadKeysInCurrentLayout_GetLocale("DEADKEYS")
+	Send {RAW}%dk%:%A_Space%
+	Send {RAW}%DeadKeysInCurrentLayout%
 	Send {Enter}
 	
 	lc := _detectDeadKeysInCurrentLayout_GetLocale("LAYOUT_CODE") 

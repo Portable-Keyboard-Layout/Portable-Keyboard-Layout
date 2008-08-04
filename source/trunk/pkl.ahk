@@ -8,7 +8,7 @@
 #MaxHotkeysPerInterval 300
 #MaxThreads 20
 
-setPklInfo( "version", "0.3.a22" )
+setPklInfo( "version", "0.3.a23" )
 setPklInfo( "compiled", "Not published" )
 
 SendMode Event
@@ -22,12 +22,10 @@ CurrentDeadKeys = 0 ; How many dead key were pressed
 CurrentBaseKey  = 0 ; Current base key :)
 
 t = %1% ; Layout from command line parameter
-pkl_init( t ) ; I would like use local variables
+pkl_init( t )
 pkl_activate()
 
 return
-
-
 
 ; ##################################### functions #####################################
 
@@ -38,11 +36,7 @@ pkl_init( layoutFromCommandLine = "" )
 		ExitApp
 	}
 	
-	IniRead, t, pkl.ini, pkl, compactMode, 0
-	if ( t == 1 || t == "true" || t == "yes" )
-		compact_mode = 1
-	else
-		compact_mode = 0
+	compact_mode := IniReadBoolean( "pkl.ini", "pkl", "compactMode", false )
 	
 	IniRead, t, pkl.ini, pkl, language, auto
 	if ( t == "auto" )
@@ -58,17 +52,12 @@ pkl_init( layoutFromCommandLine = "" )
 		}
 	}
 	
-	IniRead, t, pkl.ini, pkl, suspend, %A_Space%
-	if ( t <> "" ) {
-		Loop, parse, t, `,
-		{
-			Hotkey, %A_LoopField%, ToggleSuspend
-			if ( A_Index == 1 )
-				setpklInfo( "SuspendHotkey", A_LoopField )
-		}
-	} else {
-		Hotkey, LAlt & RCtrl, ToggleSuspend
-		setPklInfo( "SuspendHotkey", "LAlt & RCtrl" )
+	IniRead, t, pkl.ini, pkl, suspend, LAlt & RCtrl
+	Loop, parse, t, `,
+	{
+		Hotkey, %A_LoopField%, ToggleSuspend
+		if ( A_Index == 1 )
+			setpklInfo( "SuspendHotkey", A_LoopField )
 	}
 
 	IniRead, t, pkl.ini, pkl, changeLayout, %A_Space%
@@ -93,22 +82,33 @@ pkl_init( layoutFromCommandLine = "" )
 
 	IniRead, t, pkl.ini, pkl, systemsdeadkeys, %A_Space%
 	setDeadKeysInCurrentLayout( t )
-	IniRead, t, pkl.ini, pkl, altGrEqualsAltCtrl, %A_Space%
-	if ( t == 1 )
-		setPklInfo( "altGrEqualsAltCtrl", 1 )
-	else 
-		setPklInfo( "altGrEqualsAltCtrl", 0 )
+	setPklInfo( "altGrEqualsAltCtrl", IniReadBoolean( "pkl.ini", "pkl", "altGrEqualsAltCtrl", false ) )
 
-	IniRead, t, pkl.ini, pkl, changeDynamicMode, 0
+	IniRead, t, pkl.ini, pkl, changeNonASCIIMode, %A_Space%
 	if ( t <> "" ) {
 		Loop, parse, t, `,
 		{
 			Hotkey, %A_LoopField%, _SendU_Change_Dynamic_Mode
 		}
 	}
-	IniRead, t, pkl.ini, pkl, SendUClipboardRestoreMode, 1
-		SendU_Clipboard_Restore_Mode( t )
-
+	
+	SendU_Clipboard_Restore_Mode( iniReadBoolean( "nonASCII.ini", "global", "restoreClipboard", 1) )
+	Loop, read, nonASCII.ini
+	{
+		t := RegExReplace(A_LoopReadLine, "^\s+")
+		if ( SubStr( t, 1, 1 ) == ";" )
+			Continue
+		StringSplit, a, t, =
+		if ( a0 != 2 )
+			Continue
+		a1 := RegExReplace(a1, "^\s+")
+		a2 := RegExReplace(a2, "^\s+")
+		a1 := RegExReplace(a1, "\s+$")
+		a2 := RegExReplace(a2, "\s+$")
+		if ( a1 == "restoreClipboard" )
+			Continue
+		SendU_SetMode( a1, a2 )
+	}
 	IniRead, Layout, pkl.ini, pkl, layout, %A_Space%
 	StringSplit, layouts, Layout, `,
 	setLayoutInfo( "countOfLayouts", layouts0 )
@@ -305,8 +305,7 @@ pkl_activate()
 	Sleep, 10
 	pkl_show_tray_menu()
 
-	IniRead, t, pkl.ini, pkl, displayHelpImage, 1
-	if ( t )
+	if ( IniReadBoolean( "pkl.ini", "pkl", "displayHelpImage", true ) )
 		pkl_displayHelpImage( 1 )
 	
 	Sleep, 200 ; I don't want kill myself...
@@ -1201,10 +1200,26 @@ getHotkeyStringInLocale( str )
 	StringReplace, str, str, Insert, Ins, 1
 	StringReplace, str, str, Control, Ctrl, 1
 	
+	StringReplace, str, str, <^>!, RAlt &%A_Space%, 1
+	
+	StringReplace, str, str, <+, LShift &%A_Space%, 1
+	StringReplace, str, str, <^, LCtrl &%A_Space%, 1
+	StringReplace, str, str, <!, LAlt &%A_Space%, 1
+	StringReplace, str, str, <#, LWin &%A_Space%, 1
+
+	StringReplace, str, str, >+, RShift &%A_Space%, 1
+	StringReplace, str, str, >^, RCtrl &%A_Space%, 1
+	StringReplace, str, str, >!, RAlt &%A_Space%, 1
+	StringReplace, str, str, >#, RWin &%A_Space%, 1
+	
 	StringReplace, str, str, +, Shift &%A_Space%, 1
 	StringReplace, str, str, ^, Ctrl &%A_Space%, 1
 	StringReplace, str, str, !, Alt &%A_Space%, 1
 	StringReplace, str, str, #, Win &%A_Space%, 1
+	
+	StringReplace, str, str, *,, 1
+	StringReplace, str, str, $,, 1
+	StringReplace, str, str, ~,, 1
 
 	str := RegExReplace( str, "(\w+)", "#[$1]" )
 	hotkeys := getHotkeyLocale( "all" ) 
@@ -1420,6 +1435,7 @@ return
 #Include SendU.ahk
 #Include getGlobal.ahk
 #Include HashTable.ahk
+#Include iniReadBoolean.ahk
 #Include detectDeadKeysInCurrentLayout.ahk
 #Include virtualKeyCodeFromName.ahk
 #Include getDeadKeysOfSystemsActiveLayout.ahk

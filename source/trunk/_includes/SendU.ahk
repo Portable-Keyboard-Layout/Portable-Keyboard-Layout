@@ -156,7 +156,7 @@ SendU_Try_Dynamic_Mode()
 	else 
 		mode = i
 	_SendU_Dynamic_Mode_Tooltip( processName, mode )
-	_SendU_SetMode( processName, mode )
+	SendU_SetMode( processName, mode )
 	_SendU_Dynamic_Mode( "", 1 ) ; Clears the PrevProcess variable
 }
 
@@ -184,11 +184,9 @@ _SendU_Input( UC )
 	DllCall("ntdll.dll\RtlFillMemoryUlong","uint",&buffer+6, "uint",4,"uint",0x40000|UC) ;KEYEVENTF_UNICODE
 	DllCall("ntdll.dll\RtlFillMemoryUlong","uint",&buffer+34,"uint",4,"uint",0x60000|UC) ;KEYEVENTF_KEYUP|
 
-	Menu, Tray, Icon,,, 1 ; Freeze the icon
-	Suspend On ; SendInput conflicts with scan codes (SC)!
+	Suspend On ; SendInput conflicts with scan codes (SCxxx)!
 	DllCall("SendInput", UInt,2, UInt,&buffer, Int,28)
 	Suspend Off
-	Menu, Tray, Icon,,, 0 ; Unfreeze the icon
 
 	return
 }
@@ -332,14 +330,13 @@ _SendU_Dynamic_Mode( processName, clearPrevProcess = -1 )
 		return mode
 	prevProcess := processName
 	mode := _SendU_GetMode( processName )
-	if ( mode == "" )
-		mode = i
 	return mode
 }
 
 ; --------------------- other functions ----------------------------
 
-_SendU_SetMode( processName, mode )
+
+SendU_SetMode( processName, mode )
 {
 	return _SendU_GetMode( processName, mode, 1 )
 }
@@ -347,16 +344,20 @@ _SendU_SetMode( processName, mode )
 _SendU_GetMode( processName, mode = "", set = 0 )
 {
 	static pdic := 0
+
 	if ( pdic == 0 ) {
 		pdic := HashTable_New()
-		HashTable_Set( pdic,  "totalcmd.exe", "c" )
-		HashTable_Set( pdic,  "skype.exe", "c" )
+		HashTable_Set( pdic,  "default", "i" )
 	}
-	
-	if ( set == 1 )
+
+	if ( set == 1 ) {
 		HashTable_Set( pdic, processName, mode )
-	else 
-		return HashTable_Get( pdic, processName )
+	} else {
+		result := HashTable_Get( pdic, processName )
+		if ( result == "" )
+			result := HashTable_Get( pdic, "default" )
+		return result
+	}
 }
 
 _SendU_GetLocale( sKey, sVal = "", set = 0 )
