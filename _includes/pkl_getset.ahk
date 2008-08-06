@@ -23,10 +23,10 @@ setTrayIconInfo( var, val )
 
 getTrayIconInfo( var, val = "", set = 0 )
 {
-	static FileOn := "on.ico"
-	static NumOn := 1
-	static FileOff := "off.ico"
-	static NumOff := 1
+	static FileOn := ""
+	static NumOn := -1
+	static FileOff := ""
+	static NumOff := -1
 	if ( set == 1 )
 		%var% := val
 	return  %var% . ""
@@ -80,27 +80,3 @@ getPklInfo( key, value = "", set = 0 )
 	else
 		return HashTable_Get( pdic, key )
 }
-
-setDeadKeysInCurrentLayout( deadkeys )
-{
-	getDeadKeysInCurrentLayout( deadkeys, 1 )
-}
-
-getDeadKeysInCurrentLayout( newDeadkeys = "", set = 0 )
-{
-	static deadkeys := 0
-	if ( set == 1 ) {
-		if ( newDeadkeys == "auto" )
-			deadkeys := getDeadKeysOfSystemsActiveLayout()
-		else if ( newDeadkeys == "dynamic" )
-			deadkeys := 0
-		else
-			deadkeys := newDeadkeys
-		return
-	}
-	if ( deadkeys == 0 ) 
-		return getDeadKeysOfSystemsActiveLayout()
-	else
-		return deadkeys
-}
-

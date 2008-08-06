@@ -90,3 +90,27 @@ DeadKey(DK)
 		pkl_Send( hx )
 	}
 }
+
+setDeadKeysInCurrentLayout( deadkeys )
+{
+	getDeadKeysInCurrentLayout( deadkeys, 1 )
+}
+
+getDeadKeysInCurrentLayout( newDeadkeys = "", set = 0 )
+{
+	static deadkeys := 0
+	if ( set == 1 ) {
+		if ( newDeadkeys == "auto" )
+			deadkeys := getDeadKeysOfSystemsActiveLayout()
+		else if ( newDeadkeys == "dynamic" )
+			deadkeys := 0
+		else
+			deadkeys := newDeadkeys
+		return
+	}
+	if ( deadkeys == 0 ) 
+		return getDeadKeysOfSystemsActiveLayout()
+	else
+		return deadkeys
+}
+
