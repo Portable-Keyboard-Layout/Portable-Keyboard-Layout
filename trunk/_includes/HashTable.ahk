@@ -8,5 +8,5 @@
 ; There are some different implementations, uncomment your favorite!
 ;
 
-#Include HashTableGlobalVars.ahk ; For DEBUG mode
-;#Include HashTableSystemCalls.ahk
+;#Include HashTableGlobalVars.ahk ; For DEBUG mode
+#Include HashTableSystemCalls.ahk

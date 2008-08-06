@@ -1,7 +1,7 @@
 /*
 ------------------------------------------------------------------------
 
-SendU module for get VK hex code from name
+Get VirtualKey hex code from name
 http://www.autohotkey.com
 
 ------------------------------------------------------------------------
@@ -12,12 +12,6 @@ Author: FARKAS Máté <http://fmate14.try.hu> (My given name is Máté)
 
 Tested Platform:  Windows XP/Vista
 Tested AutoHotkey Version: 1.0.47.04
-Lastest version: http://autohotkey.try.hu/virtualKeyCodeFromName/virtualKeyCodeFromName.ahk
-
-------------------------------------------------------------------------
-
-If you would like help to me...
-Please correct my english misspellings...
 
 ------------------------------------------------------------------------
 

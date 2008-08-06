@@ -24,7 +24,6 @@ CurrentBaseKey  = 0 ; Current base key :)
 t = %1% ; Layout from command line parameter
 pkl_init( t )
 pkl_activate()
-
 return
 
 ; ####################### labels #######################

@@ -33,7 +33,7 @@
 ;			If section = "" list of sections separated by new lines otherwise requested section
 ;
 Ini_LoadSection( pIniFile, pSection="", pPrefix="inis_") {
-	local sIni,v,v1,v2,j
+	local sIni,v,v1,v2,j,s,res
 	static x = ",,, ,	,``,¬,¦,!,"",£,%,^,&,*,(,),=,+,{,},;,:,',~,,,<,.,>,/,\,|,-"
 	
 	
@@ -208,6 +208,85 @@ Ini_LoadKeys(pIniFile, section = "", pInfo=0, prefix = "", filter="", reverse = 
 }
 
 ;-------------------------------------------------------------------------------------
+; Function:		MakeSection
+;				Makes the section string using user global variables
+;
+; Parameters:								
+;				prefix	- Common prefix that all global variables have in their name.
+;
+; Returns:
+;				Section string 
+;
+; Remarks:
+;				If you defined more then around 16,350 variables (in entire script), this function may provide unreliable results.
+;
+; Example:
+;>				a_key1          = my key
+;>				a_SomeOtherKey  = 1
+;>				a_configuration = bla bla
+;>				somevar         = dumy
+;>
+;>				s := Ini_MakeSection("a_")
+;>				Ini_ReplaceSection("test.ini", "config", s)
+;
+Ini_MakeSection( prefix ) {
+    static hwndEdit, pSFW, pSW, bkpSFW, bkpSW
+	static header="Global Variables (alphabetical)`r`n--------------------------------------------------`r`n"
+
+    if !hwndEdit 
+    { 
+        dhw := A_DetectHiddenWindows 
+        DetectHiddenWindows, On 
+        Process, Exist 
+        ControlGet, hwndEdit, Hwnd,, Edit1, ahk_class AutoHotkey ahk_pid %ErrorLevel% 
+        DetectHiddenWindows, %dhw% 
+
+        hmod := DllCall("GetModuleHandle", "str", "user32.dll") 
+        pSFW := DllCall("GetProcAddress", "uint", hmod, "str", "SetForegroundWindow") 
+        pSW := DllCall("GetProcAddress", "uint", hmod, "str", "ShowWindow") 
+        DllCall("VirtualProtect", "uint", pSFW, "uint", 8, "uint", 0x40, "uint*", 0) 
+        DllCall("VirtualProtect", "uint", pSW, "uint", 8, "uint", 0x40, "uint*", 0) 
+        bkpSFW := NumGet(pSFW+0, 0, "int64") 
+        bkpSW := NumGet(pSW+0, 0, "int64") 
+    } 
+
+
+	critical 1000000000
+		NumPut(0x0004C200000001B8, pSFW+0, 0, "int64")  ; return TRUE 
+		NumPut(0x0008C200000001B8, pSW+0, 0, "int64")   ; return TRUE 
+		ListVars 
+		NumPut(bkpSFW, pSFW+0, 0, "int64"),  NumPut(bkpSW, pSW+0, 0, "int64") 
+	critical off
+	
+    ControlGetText, text,, ahk_id %hwndEdit% 
+	text := SubStr( text, InStr(text, header)+85 )
+
+
+  ;-----------------------------------------------------------------------------------------
+
+	len := StrLen(prefix)
+	loop, parse, text, `n, `r`n
+	{
+		j := InStr(A_LoopField, ":")
+		if !j						; line doesn't have ":" it isn't variable
+			continue
+		k := SubStr( A_LoopField, 1, j-1)
+		j := InStr(k, "[", 0, 0)
+		if !j
+			continue
+		k := SubStr( k, 1, j-1)
+		if (k < prefix)				; its alphabetical so I can compare
+			continue
+		if (SubStr(k, 1, len) != prefix)
+			break
+
+		k1 := SubStr( k, len+1), res .= k1 "=" %k% "`n"
+	}
+	return SubStr(res, 1, -1)
+}
+
+
+;-------------------------------------------------------------------------------------
 ; Function:		ReplaceSection
 ;				Replace entire section in ini file.
 ;
@@ -343,7 +422,7 @@ Ini_DelKeysRe( ByRef sSection, re) {
 	k := InStr(re, ")"), j := InStr(re, "(")
 	re := "m" ( k && (!j || j>k) ? "" : ")") re						;add m option among user options
 
-	k := RegExReplace( Ini_LoadKeys("", sSection, "keys"), re )		
+	k := RegExReplace( Ini_LoadKeys("", sSection, "keys"), re )
 	return Ini_DelKeys( sSection, k, true, "`n")
 
 }
@@ -389,5 +468,6 @@ Ini_AddMRU(ByRef sSection, pLine, pMax=10, prefix="m") {
 
 ;---------------------------------------------------------------------------------------
 ;Group: About
-;		- Version 1.0 b1 by majkinetor. See: <http://www.autohotkey.com/forum/topic22495.html>
+;		- Version 1.0 b2 by majkinetor. See: <http://www.autohotkey.com/forum/topic22495.html>
 ;		- Creative Commons Attribution 3.0 Unported <http://creativecommons.org/licenses/by/3.0/>
+

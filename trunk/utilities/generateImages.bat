@@ -18,3 +18,4 @@ del ..\layouts\%1\layout.html
 del ..\layouts\%1\*.png
 move out\*.png ..\layouts\%1\
 move out\layout.html ..\layouts\%1\
+del out\*.ini
