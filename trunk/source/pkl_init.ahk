@@ -243,7 +243,7 @@ pkl_init( layoutFromCommandLine = "" )
 		setTrayIconInfo( "FileOn", A_ScriptName )
 		setTrayIconInfo( "NumOn", 6 )
 	} else {
-		setTrayIconInfo( "FileOn", "on.ico" )
+		setTrayIconInfo( "FileOn", "source\on.ico" )
 		setTrayIconInfo( "NumOn", 1 )
 	}
 	if ( FileExist( getLayoutInfo( "dir" ) . "\off.ico") ) {
@@ -253,7 +253,7 @@ pkl_init( layoutFromCommandLine = "" )
 		setTrayIconInfo( "FileOff", A_ScriptName )
 		setTrayIconInfo( "NumOff", 3 )
 	} else {
-		setTrayIconInfo( "FileOff", "off.ico" )
+		setTrayIconInfo( "FileOff", "source\off.ico" )
 		setTrayIconInfo( "NumOff", 1 )
 	}
 	pkl_set_tray_menu()
