@@ -138,8 +138,6 @@ ToggleSuspend:
 return
 
 
-#Include %A_ScriptDir%\_includes
-
 ; ####################### functions #######################
 
 #Include pkl_deadkey.ahk
