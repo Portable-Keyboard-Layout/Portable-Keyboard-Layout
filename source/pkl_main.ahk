@@ -70,18 +70,21 @@ processKeyPress29:
 return
 
 keyPressedwoStar: ; SC025
+	activity_ping()
 	Critical
 	ThisHotkey := A_ThisHotkey
 	processKeyPress( ThisHotkey )
 return
 
 keyPressed: ; *SC025
+	activity_ping()
 	Critical
 	ThisHotkey := substr( A_ThisHotkey, 2 )
 	processKeyPress( ThisHotkey )
 return
 
 upToDownKeyPress: ; *SC025 UP
+	activity_ping()
 	Critical
 	ThisHotkey := A_ThisHotkey
 	ThisHotkey := substr( ThisHotkey, 2 )
@@ -90,12 +93,14 @@ upToDownKeyPress: ; *SC025 UP
 return
 
 modifierDown:  ; *SC025
+	activity_ping()
 	Critical
 	ThisHotkey := substr( A_ThisHotkey, 2 )
 	setModifierState( getLayoutItem( ThisHotkey . "v" ), 1 )
 return
 
 modifierUp: ; *SC025 UP
+	activity_ping()
 	Critical
 	ThisHotkey := A_ThisHotkey
 	ThisHotkey := substr( ThisHotkey, 2 )
@@ -112,7 +117,7 @@ displayHelpImage:
 return
 
 displayHelpImageToggle:
-	pkl_displayHelpImage(2)
+	pkl_displayHelpImage( 2 )
 return
 
 changeTheActiveLayout:
@@ -129,10 +134,12 @@ return
 ToggleSuspend:
 	Suspend
 	if ( A_IsSuspended ) {
-		pkl_displayHelpImage(3)
+		pkl_displayHelpImage( 3 )
 		Menu, tray, Icon, % getTrayIconInfo( "FileOff" ), % getTrayIconInfo( "NumOff" )
 	} else {
-		pkl_displayHelpImage(4)
+		activity_ping( 1 )
+		activity_ping( 2 )
+		pkl_displayHelpImage( 4 )
 		Menu, tray, Icon, % getTrayIconInfo( "FileOn" ), % getTrayIconInfo( "NumOn" )
 	}
 return
@@ -147,6 +154,7 @@ return
 #Include pkl_keypress.ahk
 #Include pkl_locale.ahk
 #Include pkl_send.ahk
+#Include pkl_activity.ahk
 
 ; ####################### (external) modules #######################
 
