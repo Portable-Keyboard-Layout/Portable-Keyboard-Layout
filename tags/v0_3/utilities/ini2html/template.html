@@ -1,0 +1,106 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style>
+	body {
+		background-color: #f0f0ff;
+		font-family: "DejaVu Sans", Arial, Sans;
+	}
+	h1 {
+		color: #0a0;
+		font-size: 1.8em;
+	}
+	h2 {
+		color: #33a;
+		padding-top: 1em;
+		font-size: 1em;
+		width: 17.4em;
+		text-align:center
+	}
+	div#layouts{
+		position: absolute;
+		top: 200px;
+		left: 10px;
+	}
+	div.layout {
+		border: 1px solid #ccc;
+		background-color: #fff;
+		padding: 2px;
+		margin: 10px 0;
+		overflow:visible;
+		width: 18.6em;
+		-moz-border-radius: 0.4em;
+		border-radius: 0.4em;
+	}
+	table.onerow,
+	table.onerow tr,
+	table.onerow td {
+		margin: 0 0;
+		padding: 0 0;
+		overflow: hidden;
+	}
+	table.onerow {
+		margin: -1px 0;
+	}
+	.button {
+		width: 1em;
+		height: 1em;
+		text-align: center;
+		margin: 0.05em;
+		border: 1px solid #ccc;
+		overflow: hidden;
+		-moz-border-radius: 0.3em;
+		border-radius: 0.3em;
+	}
+	.button div {
+		overflow: hidden;
+		width: 100%;
+		height: 100%;
+		font-size: 0.9em;
+	}
+	.special div {
+		color: #f00;
+		font-size: 0.7em;
+	}
+	.modifier div {
+		color: #00f;
+		font-size: 0.7em;
+	}
+	.deadkey { background-color: #f99; }
+	.deadkey div { font-size: 1em; }
+	.finger0 { background-color: #fff; }
+	.finger1 { background-color: #ffc; }
+	.finger2 { background-color: #ddf; }
+	.finger3 { background-color: #cfc; }
+	.finger4 { background-color: #fda; }
+	.finger5 { background-color: #fcd; }
+	.finger6 { background-color: #cfc; }
+	.finger7 { background-color: #ddf; }
+	.finger8 { background-color: #ffc; }
+	.finger9 { background-color: #cfc; }
+	.pressed { background-color: #030; }
+	.pressed div { color: #ffc; }
+	.button span.special {
+		font-size:1.5em;
+		display: block;
+		margin-top: -0.2em;
+	}
+</style>
+</head>
+<body>
+
+<p>
+	<h2>#layoutname# keyboard layout</h2>
+	<table>
+		<tr><td>Version</td><td>#version#</td></tr>
+		<tr><td>Website</td><td><a href="#homepage#">#homepage#</a></td></tr>
+		<tr><td>Copyright</td><td>#copyright#</td></tr>
+		<tr><td>Company</td><td>#company#</td></tr>
+	</table>
+</p>
+
+#modes#
+
+</body>
+</html>
