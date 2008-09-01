@@ -78,6 +78,13 @@ pkl_init( layoutFromCommandLine = "" )
 			Continue
 		SendU_SetMode( a1, a2 )
 	}
+	
+	IniRead, t, pkl.ini, pkl, suspendTimeOut, 0
+	activity_setTimeout( 1, t )
+	IniRead, t, pkl.ini, pkl, exitTimeOut, 0
+	activity_setTimeout( 2, t )
+	
+	
 	IniRead, Layout, pkl.ini, pkl, layout, %A_Space%
 	StringSplit, layouts, Layout, `,
 	setLayoutInfo( "countOfLayouts", layouts0 )
@@ -276,9 +283,13 @@ pkl_activate()
 
 	if ( IniReadBoolean( "pkl.ini", "pkl", "displayHelpImage", true ) )
 		pkl_displayHelpImage( 1 )
-	
+
 	Sleep, 200 ; I don't want kill myself...
 	OnMessage(0x398, "MessageFromNewInstance")
+
+	activity_ping(1)
+	activity_ping(2)
+	SetTimer, activityTimer,500
 }
 
 pkl_show_tray_menu()
