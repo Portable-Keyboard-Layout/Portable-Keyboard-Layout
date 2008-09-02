@@ -289,7 +289,7 @@ pkl_activate()
 
 	activity_ping(1)
 	activity_ping(2)
-	SetTimer, activityTimer,500
+	SetTimer, activityTimer, 20000
 }
 
 pkl_show_tray_menu()

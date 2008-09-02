@@ -19,14 +19,14 @@ activity_main(mode = 1, ping = 1, value = 0) {
 	return
 
 	activityTimer:
-	if ( mode1timeout > 0 && A_TickCount - mode1ping > mode1timeout * 1000) {
+	if ( mode1timeout > 0 && A_TickCount - mode1ping > mode1timeout * 60000 ) {
 		if ( not A_IsSuspended ) {
 			gosub toggleSuspend
 			activity_ping( 2 )
 			return
 		}
 	}
-	if ( mode2timeout > 0 && A_TickCount - mode2ping > mode2timeout * 1000 ) {
+	if ( mode2timeout > 0 && A_TickCount - mode2ping > mode2timeout * 60000 ) {
 		gosub exitApp
 		return
 	}
