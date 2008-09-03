@@ -10,11 +10,19 @@ toggleCapsLock()
 
 pkl_Send( ch, modif = "" )
 {
-	if ( getGlobal( "CurrentDeadKeys" ) > 0 ) {
+	static SpaceWasSentForDeadkeys = 0
+
+	if ( getGlobal( "CurrentDeadKeys" ) = 0 ) {
+		SpaceWasSentForDeadkeys = 0
+	} else {
 		setGlobal( "CurrentBaseKey", ch )
-		Send {Space}
+		if ( SpaceWasSentForDeadkeys = 0 )
+			Send {Space}
+		SpaceWasSentForDeadkeys = 1
 		return
-	} else if ( 32 < ch && ch < 128 ) {
+	}
+
+	if ( 32 < ch && ch < 128 ) {
 		char := "{" . chr(ch) . "}"
 		if ( inStr( getDeadKeysInCurrentLayout(), chr(ch) ) )
 			char .= "{Space}"
