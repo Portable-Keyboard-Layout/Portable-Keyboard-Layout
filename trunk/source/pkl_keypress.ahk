@@ -147,29 +147,29 @@ extendKeyPressed( HK )
 		Send {LAlt Down}
 		altPressed = RAlt
 	}
-	
-	if ( ch == "WheelLeft" ) {
-		ControlGetFocus, control, A
-		Loop 5  ; Scroll Speed
-			SendMessage, 0x114, 0, 0,  %control%, A ; 0x114 is WM_HSCROLL
-		return
-	} else if ( ch == "WheelRight" ) {
-		ControlGetFocus, control, A
-		Loop 5  ; Scroll Speed
-			SendMessage, 0x114, 1, 0,  %control%, A ; 0x114 is WM_HSCROLL
-		return
-	} else {
-		if ( ch == "Cut" ) {
-			ch = +{Del}
-		} else if ( ch == "Copy" ) {
-			ch = ^{Ins}
-		} else if ( ch == "Paste" ) {
-			ch = +{Ins}
-		} else {
-			ch = {Blind}{%ch%}
+	if ( A_OSVersion != "WIN_VISTA" ) {
+		if ( ch == "WheelLeft" ) {
+			ControlGetFocus, control, A
+			Loop 5  ; Scroll Speed
+				SendMessage, 0x114, 0, 0,  %control%, A ; 0x114 is WM_HSCROLL
+			return
+		} else if ( ch == "WheelRight" ) {
+			ControlGetFocus, control, A
+			Loop 5  ; Scroll Speed
+				SendMessage, 0x114, 1, 0,  %control%, A ; 0x114 is WM_HSCROLL
+			return
 		}
-		Send %ch%
 	}
+	if ( ch == "Cut" ) {
+		ch = +{Del}
+	} else if ( ch == "Copy" ) {
+		ch = ^{Ins}
+	} else if ( ch == "Paste" ) {
+		ch = +{Ins}
+	} else {
+		ch = {Blind}{%ch%}
+	}
+	Send %ch%
 }
 
 pkl_CtrlState( HK, capState, ByRef state, ByRef modif )

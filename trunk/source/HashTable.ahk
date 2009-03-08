@@ -9,4 +9,5 @@
 ;
 
 ;#Include HashTableGlobalVars.ahk ; For DEBUG mode
+;#Include HashTableStaticVars.ahk
 #Include HashTableSystemCalls.ahk
