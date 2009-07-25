@@ -147,7 +147,7 @@ extendKeyPressed( HK )
 		Send {LAlt Down}
 		altPressed = RAlt
 	}
-	if ( A_OSVersion != "WIN_VISTA" ) {
+	if ( A_OSMajorVersion < 6 ) { ; Before Windows Vista
 		if ( ch == "WheelLeft" ) {
 			ControlGetFocus, control, A
 			Loop 5  ; Scroll Speed
@@ -296,4 +296,3 @@ runKeyPress()
 
 	keyPressed( ThisHotkey )
 }
-

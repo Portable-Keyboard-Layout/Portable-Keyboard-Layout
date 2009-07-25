@@ -158,6 +158,7 @@ return
 
 ; ####################### (external) modules #######################
 
+#include A_OSVersion.ahk ; A_OSMajorVersion
 #Include HexUC.ahk ; Written by Laszlo Hars
 #Include MI.ahk ; http://www.autohotkey.com/forum/viewtopic.php?t=21991
 #Include Ini.ahk ; http://www.autohotkey.net/~majkinetor/Ini/Ini.ahk
