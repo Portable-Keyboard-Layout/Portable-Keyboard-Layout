@@ -150,9 +150,9 @@ SendU_Try_Dynamic_Mode()
 	WinGet, processName, ProcessName, A
 	mode := _SendU_GetMode( processName )
 	if ( mode == "i" )
-		mode = a
-	else if ( mode == "a" )
 		mode = c
+	else if ( mode == "c" )
+		mode = a
 	else 
 		mode = i
 	_SendU_Dynamic_Mode_Tooltip( processName, mode )
