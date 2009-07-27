@@ -133,6 +133,10 @@ return
 
 ToggleSuspend:
 	Suspend
+	goto afterSuspend
+return
+
+afterSuspend:
 	if ( A_IsSuspended ) {
 		pkl_displayHelpImage( 3 )
 		Menu, tray, Icon, % getTrayIconInfo( "FileOff" ), % getTrayIconInfo( "NumOff" )
