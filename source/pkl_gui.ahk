@@ -5,6 +5,7 @@ pkl_set_tray_menu()
 	HelpImageHotkey := getHotkeyStringInLocale( getPklInfo( "DisplayHelpImageHotkey" ) )
 	
 	Layout := getLayoutInfo( "active" )
+	LayoutName := ""
 	
 	about := pkl_locale_string(9)
 	susp := pkl_locale_string(10) . " (" . AddAtForMenu(SuspendHotkey) . ")"
@@ -27,6 +28,7 @@ pkl_set_tray_menu()
 		if ( c == Layout ) {
 			Menu, changeLayout, Default, %l%
 			Menu, changeLayout, Check, %l%
+			LayoutName := l
 		}
 		
 		icon = layouts\%c%\on.ico
@@ -75,6 +77,8 @@ pkl_set_tray_menu()
 	++iconNum
 	Menu, tray, add, %exit%, exitApp
 	MI_SetMenuItemIcon(tr, ++iconNum, "SHELL32.dll", 28, 16)
+	pklVersion := getPklInfo( "version" )
+	Menu, Tray, Tip, Portable Keyboard Layout v%pklVersion%`n(%LayoutName%)
 
 	Menu, Tray, Click, 2
 	if ( getLayoutInfo( "countOfLayouts" ) > 1 ) {
@@ -125,7 +129,7 @@ pkl_about()
 	Gui, Add, Text, , Portable Keyboard Layout v%pklVersion% (%compiledAt%)
 	Gui, Add, Edit, , http://pkl.sourceforge.net/
 	Gui, Add, Text, , ......................................................................
-	Gui, Add, Text, , (c) FARKAS, Mate, 2007-2008
+	Gui, Add, Text, , (c) FARKAS, Mate, 2007-2009
 	Gui, Add, Text, , %license%
 	Gui, Add, Text, , %infos%
 	Gui, Add, Edit, , http://www.gnu.org/licenses/gpl-3.0.txt
