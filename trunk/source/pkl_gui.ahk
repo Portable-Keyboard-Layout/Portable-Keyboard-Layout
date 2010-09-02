@@ -129,7 +129,7 @@ pkl_about()
 	Gui, Add, Text, , Portable Keyboard Layout v%pklVersion% (%compiledAt%)
 	Gui, Add, Edit, , http://pkl.sourceforge.net/
 	Gui, Add, Text, , ......................................................................
-	Gui, Add, Text, , (c) FARKAS, Mate, 2007-2009
+	Gui, Add, Text, , (c) FARKAS, Mate, 2007-2010
 	Gui, Add, Text, , %license%
 	Gui, Add, Text, , %infos%
 	Gui, Add, Edit, , http://www.gnu.org/licenses/gpl-3.0.txt
