@@ -8,8 +8,8 @@
 #MaxHotkeysPerInterval 300
 #MaxThreads 20
 
-setPklInfo( "version", "0.3" )
-setPklInfo( "compiled", "2008.09.01." )
+setPklInfo( "version", "0.4 preview" )
+setPklInfo( "compiled", "not released yet" )
 
 SendMode Event
 SetBatchLines, -1
