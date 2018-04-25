@@ -1,6 +1,4 @@
-use encoding "utf8", STDOUT => "utf8";
-use diagnostics;
-use utf8;
+#!/bin/perl
 use warnings;
 use strict;
 
@@ -144,8 +142,8 @@ close KLC;
 
 ####### Write to ini file #######
 
-open INI, '>:utf8', $INIFILE;
-binmode INI, ':utf8';
+open INI, '>:', $INIFILE;
+binmode INI, '';
 print INI <<'EOF';
 ;
 ; Keyboard Layout definition for
