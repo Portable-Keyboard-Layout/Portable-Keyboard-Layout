@@ -142,7 +142,7 @@ close KLC;
 
 ####### Write to ini file #######
 
-open INI, '>:', $INIFILE;
+open INI, '>', $INIFILE;
 binmode INI, '';
 print INI <<'EOF';
 ;
