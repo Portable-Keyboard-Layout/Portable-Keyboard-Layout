@@ -7,3 +7,8 @@ but for example I can not install it at school, so I wrote a portable keyboard l
 program using autohotkey. It doesn't require an install or administrator privileges.
 
 Just copy one of the folders in `Portable_Standalone` and start the pkl.exe file.
+
+## Similar Project PKL_eD
+
+There exists a fork with very active development at https://github.com/DreymaR/BigBagKbdTrixPKL
+Maybe you'll find some other options you would like there.
