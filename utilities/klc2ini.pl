@@ -114,6 +114,7 @@ $ll =~ /^DEADKEY\s+(....)/;
 my $dk = $1; # Current dead key
 my $dkChr = ''; # DK%dkChr%...
 my $newdk = 1;
+if (length $dk) {
 while (<KLC>) {
 	chomp;
 	if ( /^DEADKEY\s+(....)/ ) {
@@ -136,6 +137,7 @@ while (<KLC>) {
 	$DEADKEYS .= sprintf('%-4s',(hex $parts[0])).' = ';
 	$DEADKEYS .= sprintf('%4u',(hex $parts[1]));
 	$DEADKEYS .= "\t" . '; '.myChr(hex $parts[0]).' -> '.myChr(hex $parts[1])."\n";
+}
 }
 close KLC;
 
