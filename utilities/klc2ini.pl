@@ -115,29 +115,29 @@ my $dk = $1; # Current dead key
 my $dkChr = ''; # DK%dkChr%...
 my $newdk = 1;
 if (length $dk) {
-while (<KLC>) {
-	chomp;
-	if ( /^DEADKEY\s+(....)/ ) {
-		$dk = $1;
-		$newdk = 1;
-		next;
-	} elsif ( /^KEYNAME/ ) {
-		last;
-	} elsif ( $newdk ) {
-		$newdk = 0;
-		$dkChr = DeadKeyNumber(hex $dk);
-		$DEADKEYS .= "\n\n";
-		$DEADKEYS .= '[deadkey'.$dkChr.']'."\n";
-		$DEADKEYS .= sprintf('%-4s','0').' = '.sprintf('%4u',(hex $dk));
-		$DEADKEYS .= "\t" . '; ' . myChr(hex $dk) ."\n";
+	while (<KLC>) {
+		chomp;
+		if ( /^DEADKEY\s+(....)/ ) {
+			$dk = $1;
+			$newdk = 1;
+			next;
+		} elsif ( /^KEYNAME/ ) {
+			last;
+		} elsif ( $newdk ) {
+			$newdk = 0;
+			$dkChr = DeadKeyNumber(hex $dk);
+			$DEADKEYS .= "\n\n";
+			$DEADKEYS .= '[deadkey'.$dkChr.']'."\n";
+			$DEADKEYS .= sprintf('%-4s','0').' = '.sprintf('%4u',(hex $dk));
+			$DEADKEYS .= "\t" . '; ' . myChr(hex $dk) ."\n";
+		}
+		s!\s*//.*$!!;
+		my @parts = split /\s+/;
+		next unless (@parts);
+		$DEADKEYS .= sprintf('%-4s',(hex $parts[0])).' = ';
+		$DEADKEYS .= sprintf('%4u',(hex $parts[1]));
+		$DEADKEYS .= "\t" . '; '.myChr(hex $parts[0]).' -> '.myChr(hex $parts[1])."\n";
 	}
-	s!\s*//.*$!!;
-	my @parts = split /\s+/;
-	next unless (@parts);
-	$DEADKEYS .= sprintf('%-4s',(hex $parts[0])).' = ';
-	$DEADKEYS .= sprintf('%4u',(hex $parts[1]));
-	$DEADKEYS .= "\t" . '; '.myChr(hex $parts[0]).' -> '.myChr(hex $parts[1])."\n";
-}
 }
 close KLC;
 
