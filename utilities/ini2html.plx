@@ -1,6 +1,6 @@
 ﻿# use encoding "utf8", STDOUT => "utf8";
 use diagnostics;
-# use utf8;
+use utf8;
 use warnings;
 use strict;
 use Config::IniHash;
@@ -303,5 +303,6 @@ close HTML;
 
 sub myChr
 {
-	return Encode::encode("utf8", chr shift);
+	return (chr shift);
+#	return Encode::encode("utf8", chr shift);
 }
