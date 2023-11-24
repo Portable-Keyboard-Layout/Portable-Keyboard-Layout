@@ -1,4 +1,4 @@
-﻿use encoding "utf8", STDOUT => "utf8";
+﻿# use encoding "utf8", STDOUT => "utf8";
 use diagnostics;
 use utf8;
 use warnings;
@@ -6,7 +6,7 @@ use strict;
 use Config::IniHash;
 use ini2html::Button;
 use ini2html::ButtonPosition;
-use locale;
+# use locale;
 
 my $INIFILE = 'out/layout.ini';
 my $HTMLFILE = 'out/layout.html';
@@ -44,7 +44,12 @@ my $TEMPLATE = '';
 	close TPL;
 }
 
-my $layout = ReadINI $INIFILE;
+my $INITXT = undef;
+
+open ($INITXT, "< :encoding(UTF-8)", $INIFILE);
+
+my $layout = ReadINI $INITXT;
+# my $layout = ReadINI $INIFILE;
 
 my %LETTERS; # Letter => [ row, col ]
 my %SHIFTLETTERS; # Letter (with Shift) => [ row, col ]
@@ -298,5 +303,6 @@ close HTML;
 
 sub myChr
 {
-	return Encode::encode("utf8", chr shift);
+	return (chr shift);
+#	return Encode::encode("utf8", chr shift);
 }
